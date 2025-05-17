@@ -42,7 +42,7 @@ class StationsViewModel: ObservableObject {
         }
     }
 
-    // Ajouter des méthodes pour gérer les favoris
+    // Méthodes pour gérer les favoris
     func loadFavoriteStations() {
         let favoriteIds = favoritesRepository.getFavorites()
         favoriteStations = stations.filter { station in
@@ -61,21 +61,5 @@ class StationsViewModel: ObservableObject {
 
     func isFavorite(station: Station) -> Bool {
         return favoritesRepository.isFavorite(station.id)
-    }
-
-    func toggleFavorite(station: Station) {
-        if favoritesRepository.isFavorite(station.id) {
-            favoritesRepository.removeFavorite(station.id)
-        } else {
-            favoritesRepository.addFavorite(station.id)
-        }
-        loadFavoriteStations()
-    }
-
-    func loadFavoriteStations() {
-        let favoriteIds = favoritesRepository.getFavorites()
-        favoriteStations = stations.filter { station in
-            favoriteIds.contains(station.id)
-        }
     }
 }

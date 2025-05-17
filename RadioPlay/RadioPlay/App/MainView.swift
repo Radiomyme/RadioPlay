@@ -1,37 +1,47 @@
 //
-//  PlayerView.swift
+//  MainView.swift (suite)
 //  RadioPlay
-//
+//  
 //  Created by Martin Parmentier on 17/05/2025.
 //
 
-
 import SwiftUI
-import AVKit
 
+struct MainView: View {
+    @StateObject private var stationsViewModel = StationsViewModel()
+    @EnvironmentObject private var audioManager: AudioPlayerManager
+    
+    var body: some View {
+        ZStack {
+            StationsView()
+                .environmentObject(stationsViewModel)
+                .environmentObject(audioManager)
+                // Ajouter du padding en bas lorsque le mini-player est actif
+                .padding(.bottom, audioManager.currentStation != nil ? 70 : 0)
+                .animation(.easeInOut, value: audioManager.currentStation != nil)
+        }
+    }
+}
+
+// Modifications pour PlayerView
 struct PlayerView: View {
     let station: Station
-    @StateObject private var viewModel: PlayerViewModel
-    @State private var isSleepTimerPresented = false
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var audioManager: AudioPlayerManager
     @EnvironmentObject private var stationsViewModel: StationsViewModel
-
+    @Environment(\.dismiss) private var dismiss
+    @State private var isSleepTimerPresented = false
+    
     // Drag gesture state
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging = false
-
-    init(station: Station) {
-        self.station = station
-        _viewModel = StateObject(wrappedValue: PlayerViewModel(station: station))
-    }
-
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 // Fond avec flou de l'image
                 Color.black.edgesIgnoringSafeArea(.all)
-
-                if let artwork = viewModel.artwork {
+                
+                if let artwork = audioManager.artwork {
                     Image(uiImage: artwork)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -40,7 +50,7 @@ struct PlayerView: View {
                         .opacity(0.3)
                         .edgesIgnoringSafeArea(.all)
                 }
-
+                
                 // Overlay pour assombrir légèrement
                 LinearGradient(
                     gradient: Gradient(colors: [Color.black.opacity(0.4), Color.black.opacity(0.7)]),
@@ -48,7 +58,7 @@ struct PlayerView: View {
                     endPoint: .bottom
                 )
                 .edgesIgnoringSafeArea(.all)
-
+                
                 // Interface principale
                 VStack(spacing: 0) {
                     // En-tête avec nom de la station
@@ -68,18 +78,18 @@ struct PlayerView: View {
                                 .background(Color.black.opacity(0.4))
                                 .cornerRadius(20)
                             }
-                            .padding(.leading, -5) // Ajusté pour être plus à gauche
-
+                            .padding(.leading, -5)
+                            
                             Spacer()
                         }
-
+                        
                         // Titre centré
                         Text(station.name)
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
                             .lineLimit(1)
                             .frame(maxWidth: geometry.size.width * 0.6)
-
+                        
                         // Bouton favoris à droite
                         HStack {
                             Spacer()
@@ -99,33 +109,33 @@ struct PlayerView: View {
                     .padding(.top, geometry.safeAreaInsets.top > 0 ? 0 : 12)
                     .padding(.horizontal, 12)
                     .padding(.bottom, 20)
-
+                    
                     Spacer()
-
+                    
                     // Artwork au centre
-                    ArtworkView(artwork: viewModel.artwork, isBuffering: viewModel.isBuffering)
+                    ArtworkView(artwork: audioManager.artwork, isBuffering: audioManager.isBuffering)
                         .frame(width: min(geometry.size.width * 0.9, 350))
-
+                    
                     Spacer()
-
+                    
                     // Informations sur la piste
                     VStack(spacing: 16) {
                         // Visualisateur audio uniquement si en lecture
-                        if viewModel.isPlaying && !viewModel.isBuffering {
-                            AudioVisualizerView(isPlaying: viewModel.isPlaying)
+                        if audioManager.isPlaying && !audioManager.isBuffering {
+                            AudioVisualizerView(isPlaying: audioManager.isPlaying)
                                 .frame(height: 30)
                                 .padding(.bottom, 10)
                         }
-
-                        Text(viewModel.currentTrack?.title ?? "En direct")
+                        
+                        Text(audioManager.currentTrack?.title ?? "En direct")
                             .font(.system(size: 26, weight: .bold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 30)
-
-                        Text(viewModel.currentTrack?.artist ?? station.subtitle)
+                        
+                        Text(audioManager.currentTrack?.artist ?? station.subtitle)
                             .font(.system(size: 20))
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.center)
@@ -135,75 +145,75 @@ struct PlayerView: View {
                             .padding(.bottom, 10)
                     }
                     .frame(maxWidth: .infinity)
-
+                    
                     Spacer()
-
+                    
                     // Contrôles
                     HStack(spacing: 24) {
                         Spacer()
-
+                        
                         Button(action: {
-                            viewModel.shareTrack()
+                            shareCurrentTrack()
                         }) {
                             ZStack {
                                 Circle()
                                     .fill(Color(white: 0.2))
                                     .frame(width: 50, height: 50)
-
+                                
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 20))
                                     .foregroundColor(.white)
                             }
                         }
-
+                        
                         Button(action: {
-                            viewModel.togglePlayPause()
+                            audioManager.togglePlayPause()
                         }) {
                             ZStack {
                                 Circle()
                                     .fill(Color.blue)
                                     .frame(width: 70, height: 70)
                                     .shadow(color: Color.blue.opacity(0.4), radius: 10, x: 0, y: 5)
-
-                                Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                
+                                Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
                                     .font(.system(size: 30))
                                     .foregroundColor(.white)
                             }
                         }
-
+                        
                         Button(action: {
-                            viewModel.openInAppleMusic()
+                            openInAppleMusic()
                         }) {
                             ZStack {
                                 Circle()
                                     .fill(Color(white: 0.2))
                                     .frame(width: 50, height: 50)
-
+                                
                                 Image(systemName: "music.note")
                                     .font(.system(size: 20))
                                     .foregroundColor(.white)
                             }
                         }
-
+                        
                         Spacer()
                     }
                     .padding(.bottom, 30)
-
+                    
                     // Barre du bas avec éléments supplémentaires
                     HStack(spacing: 30) {
                         Spacer()
-
+                        
                         Button(action: {
                             isSleepTimerPresented = true
                         }) {
-                            Image(systemName: viewModel.sleepTimerService.isActive ? "timer.circle.fill" : "timer.circle")
+                            Image(systemName: audioManager.sleepTimerService.isActive ? "timer.circle.fill" : "timer.circle")
                                 .font(.system(size: 22))
-                                .foregroundColor(viewModel.sleepTimerService.isActive ? .blue : .white)
+                                .foregroundColor(audioManager.sleepTimerService.isActive ? .blue : .white)
                         }
-
+                        
                         AirPlayButton()
                             .frame(width: 30, height: 30)
-
+                        
                         Spacer()
                     }
                     .padding(.bottom, max(geometry.safeAreaInsets.bottom, 20))
@@ -217,20 +227,18 @@ struct PlayerView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
-            viewModel.startPlaying()
-        }
-        .onDisappear {
-            viewModel.stopPlaying()
+            // Démarrer la lecture
+            audioManager.play(station: station)
         }
         .sheet(isPresented: $isSleepTimerPresented) {
             SleepTimerView(
-                sleepTimerService: viewModel.sleepTimerService,
+                sleepTimerService: audioManager.sleepTimerService,
                 isPresented: $isSleepTimerPresented,
                 onSetTimer: { duration in
-                    viewModel.setupSleepTimer(duration: duration)
+                    audioManager.setupSleepTimer(duration: duration)
                 },
                 onCancelTimer: {
-                    viewModel.cancelSleepTimer()
+                    audioManager.cancelSleepTimer()
                 }
             )
         }
@@ -272,5 +280,35 @@ struct PlayerView: View {
             }
             .animation(.easeInOut(duration: 0.2), value: isDragging)
         )
+    }
+    
+    private func shareCurrentTrack() {
+        guard let track = audioManager.currentTrack else { return }
+        
+        let text = "J'écoute \(track.title) par \(track.artist) sur \(station.name) via Radio Play!"
+        
+        var items: [Any] = [text]
+        
+        if let artwork = audioManager.artwork {
+            items.append(artwork)
+        }
+        
+        let activityViewController = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        
+        if let rootVC = AppUtility.rootViewController {
+            rootVC.present(activityViewController, animated: true)
+        }
+    }
+    
+    private func openInAppleMusic() {
+        guard let track = audioManager.currentTrack else { return }
+        
+        // Construire la requête de recherche pour Apple Music
+        let query = "\(track.artist) \(track.title)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "https://music.apple.com/search?term=\(query)"
+        
+        guard let url = URL(string: urlString) else { return }
+        
+        UIApplication.shared.open(url)
     }
 }

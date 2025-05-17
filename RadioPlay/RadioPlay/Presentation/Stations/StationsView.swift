@@ -1,16 +1,16 @@
 //
-//  StationsView.swift
+//  StationsView mise à jour pour l'AudioManager
 //  RadioPlay
 //
 //  Created by Martin Parmentier on 17/05/2025.
 //
 
 
-// Presentation/Stations/StationsView.swift
 import SwiftUI
 
 struct StationsView: View {
     @StateObject private var viewModel = StationsViewModel()
+    @EnvironmentObject private var audioManager: AudioPlayerManager
     @State private var searchText = ""
 
     var filteredStations: [Station] {
@@ -113,11 +113,20 @@ struct StationsView: View {
                         ScrollView {
                             LazyVStack(spacing: 16) {
                                 ForEach(filteredStations) { station in
-                                    NavigationLink(destination: PlayerView(station: station)) {
-                                        ModernStationCard(station: station, isFavorite: viewModel.isFavorite(station: station))
-                                            .onTapGesture {
-                                                // Vide car NavigationLink gère le tap
+                                    NavigationLink(destination: PlayerView(station: station)
+                                        .environmentObject(viewModel)
+                                        .environmentObject(audioManager)) {
+                                        ModernStationCard(
+                                            station: station,
+                                            isFavorite: viewModel.isFavorite(station: station),
+                                            isPlaying: audioManager.currentStation?.id == station.id && audioManager.isPlaying,
+                                            onFavoriteToggle: {
+                                                viewModel.toggleFavorite(station: station)
+                                            },
+                                            onPlayToggle: {
+                                                handleStationTap(station)
                                             }
+                                        )
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                 }
@@ -140,6 +149,17 @@ struct StationsView: View {
         .navigationViewStyle(StackNavigationViewStyle())
         .preferredColorScheme(.dark)
     }
+
+    // Gérer la lecture directement depuis la liste
+    private func handleStationTap(_ station: Station) {
+        if audioManager.currentStation?.id == station.id {
+            // Si c'est la même station, toggle play/pause
+            audioManager.togglePlayPause()
+        } else {
+            // Sinon, lancer la lecture de la nouvelle station
+            audioManager.play(station: station)
+        }
+    }
 }
 
 struct CategoryChip: View {
@@ -160,81 +180,97 @@ struct CategoryChip: View {
 struct ModernStationCard: View {
     let station: Station
     let isFavorite: Bool
+    let isPlaying: Bool
+    let onFavoriteToggle: () -> Void
+    let onPlayToggle: () -> Void
 
     var body: some View {
-        HStack(spacing: 15) {
-            // Logo de la station avec effet d'ombre
-            AsyncImage(url: URL(string: station.logoURL ?? "")) { phase in
-                switch phase {
-                case .empty:
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(white: 0.2))
-                        .frame(width: 70, height: 70)
-                        .overlay(
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        )
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 70, height: 70)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: Color.blue.opacity(0.3), radius: 5, x: 0, y: 2)
-                case .failure:
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(white: 0.2))
-                        .frame(width: 70, height: 70)
-                        .overlay(
-                            Image(systemName: "radio")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .padding(15)
-                                .foregroundColor(.gray)
-                        )
-                @unknown default:
-                    EmptyView()
+        ZStack {
+            // Contenu principal de la carte
+            HStack(spacing: 15) {
+                // Logo de la station avec effet d'ombre
+                AsyncImage(url: URL(string: station.logoURL ?? "")) { phase in
+                    switch phase {
+                    case .empty:
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(white: 0.2))
+                            .frame(width: 70, height: 70)
+                            .overlay(
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            )
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 70, height: 70)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .shadow(color: Color.blue.opacity(0.3), radius: 5, x: 0, y: 2)
+                    case .failure:
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(white: 0.2))
+                            .frame(width: 70, height: 70)
+                            .overlay(
+                                Image(systemName: "radio")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .padding(15)
+                                    .foregroundColor(.gray)
+                            )
+                    @unknown default:
+                        EmptyView()
+                    }
                 }
-            }
 
-            VStack(alignment: .leading, spacing: 5) {
-                Text(station.name)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.white)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(station.name)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.white)
 
-                Text(station.subtitle)
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-                    .lineLimit(2)
-
-                // Ajouter un tag si c'est en direct (optionnel)
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 8, height: 8)
-                    Text("En direct")
-                        .font(.system(size: 12, weight: .medium))
+                    Text(station.subtitle)
+                        .font(.system(size: 14))
                         .foregroundColor(.gray)
+                        .lineLimit(2)
+
+                    // Ajouter un tag si c'est en direct (optionnel)
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(isPlaying ? Color.green : Color.red)
+                            .frame(width: 8, height: 8)
+                        Text(isPlaying ? "En écoute" : "En direct")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
                 }
-            }
 
-            Spacer()
+                Spacer()
 
-            VStack(spacing: 12) {
-                // Indicateur de favori
-                Image(systemName: isFavorite ? "heart.fill" : "heart")
-                    .foregroundColor(isFavorite ? .red : .gray)
+                VStack(spacing: 12) {
+                    // Bouton pour les favoris
+                    Button(action: {
+                        onFavoriteToggle()
+                    }) {
+                        Image(systemName: isFavorite ? "heart.fill" : "heart")
+                            .foregroundColor(isFavorite ? .red : .gray)
+                    }
+                    .buttonStyle(PlainButtonStyle())
 
-                // Bouton de lecture
-                Image(systemName: "play.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundColor(.blue)
+                    // Bouton de lecture
+                    Button(action: {
+                        onPlayToggle()
+                    }) {
+                        Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(isPlaying ? .green : .blue)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
             }
         }
         .padding(15)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(white: 0.1))
+                .fill(isPlaying ? Color(white: 0.15) : Color(white: 0.1))
                 .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
         )
         .padding(.horizontal, 2)
