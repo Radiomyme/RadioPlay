@@ -12,28 +12,41 @@ import SwiftUI
 struct ArtworkView: View {
     let artwork: UIImage?
     let isBuffering: Bool
-    
+
     @State private var scale: CGFloat = 0.8
     @State private var opacity: Double = 0
-    
+    @State private var rotation: Double = 0
+
     var body: some View {
         ZStack {
             if isBuffering {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    .scaleEffect(1.5)
-                    .frame(width: 250, height: 250)
-                    .background(Color.black.opacity(0.3))
-                    .cornerRadius(20)
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.5)
+
+                    Text("Chargement...")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding(.top, 10)
+                }
+                .frame(width: 280, height: 280)
+                .background(Color.black.opacity(0.3))
+                .cornerRadius(20)
             } else if let artwork = artwork {
                 Image(uiImage: artwork)
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 250, height: 250)
-                    .cornerRadius(20)
-                    .shadow(radius: 10)
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 280, height: 280)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.5), radius: 20, x: 0, y: 10)
                     .scaleEffect(scale)
                     .opacity(opacity)
+                    .rotationEffect(.degrees(rotation))
                     .onAppear {
                         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                             scale = 1.0
@@ -41,30 +54,42 @@ struct ArtworkView: View {
                         }
                     }
                     .onChange(of: artwork) { _ in
+                        // Animation de transition
                         scale = 0.8
                         opacity = 0
-                        
+                        rotation = -5
+
                         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                             scale = 1.0
                             opacity = 1.0
+                            rotation = 0
                         }
                     }
             } else {
-                Image(systemName: "music.note")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .padding(40)
-                    .frame(width: 250, height: 250)
-                    .background(Color.gray.opacity(0.3))
-                    .cornerRadius(20)
-                    .opacity(opacity)
-                    .onAppear {
-                        withAnimation(.easeIn(duration: 0.3)) {
-                            opacity = 1.0
-                        }
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(
+                            gradient: Gradient(colors: [Color(red: 0.1, green: 0.1, blue: 0.3), Color.black]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                        .frame(width: 240, height: 240)
+                        .shadow(color: Color.black.opacity(0.5), radius: 20, x: 0, y: 10)
+
+                    Image(systemName: "music.note")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .padding(60)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .opacity(opacity)
+                .onAppear {
+                    withAnimation(.easeIn(duration: 0.3)) {
+                        opacity = 1.0
                     }
+                }
             }
         }
-        .frame(height: 270)
+        .frame(height: 300)
     }
 }

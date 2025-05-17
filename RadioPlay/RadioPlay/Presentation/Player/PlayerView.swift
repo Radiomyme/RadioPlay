@@ -15,18 +15,17 @@ struct PlayerView: View {
     @StateObject private var viewModel: PlayerViewModel
     @State private var isSleepTimerPresented = false
     @Environment(\.dismiss) private var dismiss
-    
+
     init(station: Station) {
         self.station = station
         _viewModel = StateObject(wrappedValue: PlayerViewModel(station: station))
     }
-    
+
     var body: some View {
         ZStack {
-            // Fond
+            // Fond avec flou de l'image
             Color.black.edgesIgnoringSafeArea(.all)
-            
-            // Fond avec effet de flou
+
             if let artwork = viewModel.artwork {
                 Image(uiImage: artwork)
                     .resizable()
@@ -36,102 +35,160 @@ struct PlayerView: View {
                     .opacity(0.3)
                     .edgesIgnoringSafeArea(.all)
             }
-            
-            // Contenu principal
-            VStack(spacing: 30) {
-                // Station info
-                Text(station.name)
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.top)
-                
+
+            // Overlay pour assombrir légèrement
+            LinearGradient(
+                gradient: Gradient(colors: [Color.black.opacity(0.4), Color.black.opacity(0.7)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .edgesIgnoringSafeArea(.all)
+
+            // Interface principale
+            VStack(spacing: 0) {
+                // En-tête avec nom de la station
+                HStack {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Retour")
+                                .font(.system(size: 16, weight: .medium))
+                        }
+                        .foregroundColor(.white)
+                    }
+
+                    Spacer()
+
+                    Text(station.name)
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    // Bouton pour les favoris
+                    Button(action: {
+                        // Action pour ajouter aux favoris
+                    }) {
+                        Image(systemName: "heart")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .padding(.bottom, 20)
+
                 Spacer()
-                
-                // Artwork
+
+                // Artwork au centre
                 ArtworkView(artwork: viewModel.artwork, isBuffering: viewModel.isBuffering)
 
                 Spacer()
-                
-                // Track info
-                VStack(spacing: 8) {
+
+                // Informations sur la piste
+                VStack(spacing: 12) {
+                    // Visualisateur audio uniquement si en lecture
+                    if viewModel.isPlaying && !viewModel.isBuffering {
+                        AudioVisualizerView(isPlaying: viewModel.isPlaying)
+                            .frame(height: 30)
+                            .padding(.bottom, 10)
+                    }
+
                     Text(viewModel.currentTrack?.title ?? "En direct")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
-                    
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 30)
+
                     Text(viewModel.currentTrack?.artist ?? station.subtitle)
-                        .font(.title3)
+                        .font(.system(size: 18))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 30)
+                        .padding(.bottom, 10)
                 }
-                .padding(.horizontal)
-
-                if viewModel.isPlaying && !viewModel.isBuffering {
-                    AudioVisualizerView(isPlaying: viewModel.isPlaying)
-                        .padding(.top, 10)
-                }
+                .frame(maxWidth: .infinity)
 
                 Spacer()
-                
-                // Controls
-                HStack(spacing: 40) {
+
+                // Contrôles
+                HStack(spacing: 24) {
+                    Spacer()
+
                     Button(action: {
                         viewModel.shareTrack()
                     }) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.title)
-                            .foregroundColor(.white)
+                        ZStack {
+                            Circle()
+                                .fill(Color(white: 0.2))
+                                .frame(width: 50, height: 50)
+
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white)
+                        }
                     }
-                    
+
                     Button(action: {
                         viewModel.togglePlayPause()
                     }) {
-                        Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 64))
-                            .foregroundColor(.white)
+                        ZStack {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 70, height: 70)
+                                .shadow(color: Color.blue.opacity(0.4), radius: 10, x: 0, y: 5)
+
+                            Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(.white)
+                        }
                     }
-                    
+
                     Button(action: {
                         viewModel.openInAppleMusic()
                     }) {
-                        Image(systemName: "music.note")
-                            .font(.title)
-                            .foregroundColor(.white)
+                        ZStack {
+                            Circle()
+                                .fill(Color(white: 0.2))
+                                .frame(width: 50, height: 50)
+
+                            Image(systemName: "music.note")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white)
+                        }
                     }
+
+                    Spacer()
                 }
                 .padding(.bottom, 30)
 
-                Button(action: {
-                    isSleepTimerPresented = true
-                }) {
-                    Image(systemName: viewModel.sleepTimerService.isActive ? "timer" : "timer")
-                        .font(.title)
-                        .foregroundColor(viewModel.sleepTimerService.isActive ? .blue : .white)
-                        .overlay(
-                            viewModel.sleepTimerService.isActive ?
-                            Text(viewModel.sleepTimerService.formattedTimeRemaining())
-                                .font(.system(size: 8))
-                                .foregroundColor(.white)
-                                .padding(4)
-                                .background(Color.blue)
-                                .clipShape(Circle())
-                                .offset(x: 12, y: 12) : nil
-                        )
-                }
+                // Barre du bas avec éléments supplémentaires
+                HStack(spacing: 30) {
+                    Spacer()
 
-                // AirPlay button
-                AirPlayButton()
-                    .frame(width: 30, height: 30)
-                    .padding(.bottom)
+                    Button(action: {
+                        isSleepTimerPresented = true
+                    }) {
+                        Image(systemName: viewModel.sleepTimerService.isActive ? "timer.circle.fill" : "timer.circle")
+                            .font(.system(size: 22))
+                            .foregroundColor(viewModel.sleepTimerService.isActive ? .blue : .white)
+                    }
+
+                    AirPlayButton()
+                        .frame(width: 30, height: 30)
+
+                    Spacer()
+                }
+                .padding(.bottom, 20)
             }
             .padding()
         }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: BackButton(dismiss: dismiss))
+        .navigationBarHidden(true)
         .onAppear {
             viewModel.startPlaying()
         }
@@ -149,22 +206,6 @@ struct PlayerView: View {
                     viewModel.cancelSleepTimer()
                 }
             )
-        }
-    }
-}
-
-struct BackButton: View {
-    let dismiss: DismissAction
-
-    var body: some View {
-        Button(action: {
-            dismiss()
-        }) {
-            HStack {
-                Image(systemName: "chevron.left")
-                Text("Retour")
-            }
-            .foregroundColor(.white)
         }
     }
 }

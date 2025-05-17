@@ -79,27 +79,23 @@ class PlayerViewModel: ObservableObject {
     
     func shareTrack() {
         guard let track = currentTrack else { return }
-        
+
         let text = "J'écoute \(track.title) par \(track.artist) sur \(station.name) via Radio Play!"
-        
+
         var items: [Any] = [text]
-        
+
         if let artwork = artwork {
             items.append(artwork)
         }
-        
+
         let activityViewController = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        
-        // Cette partie nécessite un UIHostingController pour être présentée
-        // Vous aurez besoin d'une référence à un UIViewController
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootVC = windowScene.windows.first?.rootViewController else {
-            return
+
+        // Utiliser AppUtility au lieu de App
+        if let rootVC = AppUtility.rootViewController {
+            rootVC.present(activityViewController, animated: true)
         }
-        
-        rootVC.present(activityViewController, animated: true)
     }
-    
+
     func openInAppleMusic() {
         guard let track = currentTrack else { return }
         

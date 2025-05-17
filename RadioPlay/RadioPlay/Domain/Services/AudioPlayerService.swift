@@ -11,20 +11,30 @@ import Foundation
 import AVFoundation
 import MediaPlayer
 
-class AudioPlayerService: ObservableObject {
+class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutputPushDelegate {
     @Published private(set) var isPlaying = false
     @Published private(set) var currentTrack: Track?
     @Published private(set) var isBuffering = false
-    
+
     private var player: AVPlayer?
     private var playerItem: AVPlayerItem?
     private var metadataOutput: AVPlayerItemMetadataOutput?
-    
-    init() {
+
+    override init() {
+        super.init()
         setupAudioSession()
         setupRemoteTransportControls()
     }
-    
+
+    // Implémentation du protocole AVPlayerItemMetadataOutputPushDelegate
+    func metadataOutput(_ output: AVPlayerItemMetadataOutput, didOutputTimedMetadataGroups groups: [AVTimedMetadataGroup], from track: AVPlayerItemTrack?) {
+        if let group = groups.first,
+           let metadataItem = group.items.first,
+           let value = metadataItem.value as? String {
+            parseStreamTitle(value)
+        }
+    }
+
     func play(station: Station) {
         guard let url = URL(string: station.streamURL) else { return }
         
@@ -89,20 +99,20 @@ class AudioPlayerService: ObservableObject {
     }
     
     private func setupMetadataObservers() {
-        // Observer pour les métadonnées ICY (Shoutcast/Icecast)
+        // Observer pour les métadonnées AVPlayerItem
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleMetadataUpdate),
-            name: .AVPlayerItemNewMetadataAvailable,
+            name: .AVPlayerItemNewAccessLogEntry,
             object: playerItem
         )
-        
+
         // Configuration avancée pour les métadonnées
         metadataOutput = AVPlayerItemMetadataOutput(identifiers: nil)
         metadataOutput?.setDelegate(self, queue: DispatchQueue.main)
         playerItem?.add(metadataOutput!)
     }
-    
+
     @objc private func handleMetadataUpdate(notification: Notification) {
         guard let playerItem = player?.currentItem else { return }
         

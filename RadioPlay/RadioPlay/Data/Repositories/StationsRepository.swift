@@ -15,23 +15,29 @@ class StationsRepository {
     private let coreDataManager = CoreDataManager.shared
     
     // Charger les stations (d'abord localement, puis tenter de mettre à jour depuis le réseau)
-    func loadStations() async -> [Station] {
+    func loadStations() async throws -> [Station] {
         let localStations = fetchLocalStations()
-        
+
         do {
             // Tenter de récupérer les stations à distance
             let remoteStations = try await remoteConfigService.fetchStations()
-            
+
             // Si on a réussi, mettre à jour le stockage local
             await saveStationsLocally(remoteStations)
             return remoteStations
         } catch {
-            print("Failed to fetch remote stations: \(error)")
+            Logger.log("Failed to fetch remote stations: \(error)", category: .network, type: .error)
+
+            // Si nous n'avons pas de stations locales non plus, remonter l'erreur
+            if localStations.isEmpty {
+                throw error
+            }
+
             // Renvoyer les stations locales si la récupération à distance échoue
             return localStations
         }
     }
-    
+
     // Récupérer les stations stockées localement
     private func fetchLocalStations() -> [Station] {
         let context = coreDataManager.persistentContainer.viewContext

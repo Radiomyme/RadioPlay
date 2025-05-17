@@ -10,7 +10,7 @@
 import Foundation
 
 class RemoteConfigService {
-    private let endpoint = "https://votre-domaine.com/api/stations"
+    private let endpoint = "https://radiomyme.fr/server/radio_stations.json"
     // Pour les tests, vous pouvez héberger un fichier JSON sur GitHub Gist ou Firebase
     
     func fetchStations() async throws -> [Station] {
