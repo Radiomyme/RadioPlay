@@ -43,7 +43,8 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
         // Créer l'item pour le player
         playerItem = AVPlayerItem(url: url)
         player = AVPlayer(playerItem: playerItem)
-        
+        player?.automaticallyWaitsToMinimizeStalling = false
+
         // Observer pour les métadonnées (Icecast, Shoutcast)
         setupMetadataObservers()
         

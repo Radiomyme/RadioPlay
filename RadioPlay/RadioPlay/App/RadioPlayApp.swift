@@ -8,6 +8,7 @@
 import SwiftUI
 import AVFoundation
 import CoreData
+import MediaPlayer  // Ajout de cet import
 
 @main
 struct RadioPlayApp: SwiftUI.App {
@@ -21,7 +22,7 @@ struct RadioPlayApp: SwiftUI.App {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.allowAirPlay, .allowBluetooth])
             try AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
 
-            // Activer les commandes de lecture en arrière-plan
+            // Assurez-vous que cette ligne est présente et exécutée
             setupRemoteCommands()
         } catch {
             print("Échec de la configuration de la session audio: \(error)")
@@ -46,6 +47,7 @@ struct RadioPlayApp: SwiftUI.App {
                         .transition(.move(edge: .bottom))
                 }
             }
+            // Assurons-nous que l'animation est correcte et liée à l'état du currentStation
             .animation(.easeInOut, value: audioManager.currentStation != nil)
         }
     }
@@ -57,77 +59,5 @@ struct RadioPlayApp: SwiftUI.App {
         commandCenter.playCommand.isEnabled = true
         commandCenter.pauseCommand.isEnabled = true
         commandCenter.togglePlayPauseCommand.isEnabled = true
-    }
-}
-
-// Gestionnaire audio global pour maintenir l'état entre les vues
-class AudioPlayerManager: ObservableObject {
-    static let shared = AudioPlayerManager()
-
-    private let audioService = AudioPlayerService()
-    private var cancellables = Set<AnyCancellable>()
-
-    @Published var currentStation: Station?
-    @Published var isPlaying: Bool = false
-    @Published var currentTrack: Track?
-    @Published var isBuffering: Bool = false
-    @Published var artwork: UIImage?
-
-    private init() {
-        // Observer les changements dans le service audio
-        audioService.$isPlaying
-            .assign(to: \.isPlaying, on: self)
-            .store(in: &cancellables)
-
-        audioService.$isBuffering
-            .assign(to: \.isBuffering, on: self)
-            .store(in: &cancellables)
-
-        audioService.$currentTrack
-            .sink { [weak self] track in
-                guard let self = self, let track = track else { return }
-                self.currentTrack = track
-                self.updateArtwork(for: track)
-            }
-            .store(in: &cancellables)
-    }
-
-    func play(station: Station) {
-        if currentStation?.id != station.id {
-            // Nouvelle station
-            currentStation = station
-            audioService.play(station: station)
-        } else if !isPlaying {
-            // Même station, juste reprendre la lecture
-            audioService.togglePlayPause()
-        }
-    }
-
-    func togglePlayPause() {
-        audioService.togglePlayPause()
-    }
-
-    func stop() {
-        audioService.stop()
-        currentStation = nil
-        artwork = nil
-    }
-
-    private func updateArtwork(for track: Track) {
-        // Réutiliser le code du ArtworkService
-        Task {
-            do {
-                let artworkService = ArtworkService()
-                let image = try await artworkService.fetchArtwork(for: track)
-                await MainActor.run {
-                    self.artwork = image ?? UIImage(named: "default_artwork")
-                }
-            } catch {
-                print("Failed to fetch artwork: \(error)")
-                await MainActor.run {
-                    self.artwork = UIImage(named: "default_artwork")
-                }
-            }
-        }
     }
 }

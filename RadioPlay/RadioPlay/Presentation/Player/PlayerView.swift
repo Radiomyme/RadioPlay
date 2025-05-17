@@ -220,7 +220,7 @@ struct PlayerView: View {
             viewModel.startPlaying()
         }
         .onDisappear {
-            viewModel.stopPlaying()
+            //viewModel.stopPlaying()
         }
         .sheet(isPresented: $isSleepTimerPresented) {
             SleepTimerView(

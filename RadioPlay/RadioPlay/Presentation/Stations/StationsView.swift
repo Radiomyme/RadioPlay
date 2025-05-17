@@ -158,6 +158,7 @@ struct StationsView: View {
         } else {
             // Sinon, lancer la lecture de la nouvelle station
             audioManager.play(station: station)
+            // IMPORTANT: Ceci définit audioManager.currentStation dans la méthode play
         }
     }
 }

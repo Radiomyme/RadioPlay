@@ -49,24 +49,25 @@ class AudioPlayerManager: ObservableObject {
     func play(station: Station) {
         if currentStation?.id != station.id {
             // Nouvelle station
-            currentStation = station
+            currentStation = station  // Assurons-nous que cette ligne est bien présente
             audioService.play(station: station)
         } else if !isPlaying {
             // Même station, juste reprendre la lecture
             audioService.togglePlayPause()
         }
     }
-    
+
     func togglePlayPause() {
         audioService.togglePlayPause()
+        // Ne pas modifier currentStation ici
     }
-    
+
     func stop() {
         audioService.stop()
-        currentStation = nil
+        currentStation = nil  // Cette ligne réinitialise la station et fait disparaître le mini player
         artwork = nil
     }
-    
+
     func setupSleepTimer(duration: TimeInterval) {
         sleepTimerService.startTimer(duration: duration) { [weak self] in
             self?.stop()
