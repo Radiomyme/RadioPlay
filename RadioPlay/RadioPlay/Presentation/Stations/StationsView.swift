@@ -12,14 +12,62 @@ struct StationsView: View {
     @StateObject private var viewModel = StationsViewModel()
     @EnvironmentObject private var audioManager: AudioPlayerManager
     @State private var searchText = ""
+    @State private var selectedCategory: StationCategory = .all
+    @State private var showSettings = false
+
+    enum StationCategory: String, CaseIterable {
+        case all = "Toutes"
+        case favorites = "Favoris"
+        case news = "Actualités"
+        case music = "Musique"
+        case sport = "Sport"
+        case culture = "Culture"
+    }
 
     var filteredStations: [Station] {
-        if searchText.isEmpty {
-            return viewModel.stations
-        } else {
-            return viewModel.stations.filter {
+        // Première étape : appliquer le filtre de recherche
+        let searchFiltered = searchText.isEmpty ?
+            viewModel.stations :
+            viewModel.stations.filter {
                 $0.name.localizedCaseInsensitiveContains(searchText) ||
                 $0.subtitle.localizedCaseInsensitiveContains(searchText)
+            }
+
+        // Deuxième étape : appliquer le filtre de catégorie
+        switch selectedCategory {
+        case .all:
+            return searchFiltered
+        case .favorites:
+            return searchFiltered.filter { viewModel.isFavorite(station: $0) }
+        case .news:
+            return searchFiltered.filter {
+                $0.subtitle.localizedCaseInsensitiveContains("info") ||
+                $0.subtitle.localizedCaseInsensitiveContains("actualité") ||
+                $0.name.localizedCaseInsensitiveContains("info") ||
+                $0.name.localizedCaseInsensitiveContains("france info")
+            }
+        case .music:
+            return searchFiltered.filter {
+                $0.subtitle.localizedCaseInsensitiveContains("music") ||
+                $0.subtitle.localizedCaseInsensitiveContains("hit") ||
+                $0.name.localizedCaseInsensitiveContains("NRJ") ||
+                $0.name.localizedCaseInsensitiveContains("RTL2") ||
+                $0.name.localizedCaseInsensitiveContains("Fun") ||
+                $0.name.localizedCaseInsensitiveContains("Skyrock") ||
+                $0.name.localizedCaseInsensitiveContains("Virgin") ||
+                $0.name.localizedCaseInsensitiveContains("Radio Classique")
+            }
+        case .sport:
+            return searchFiltered.filter {
+                $0.subtitle.localizedCaseInsensitiveContains("sport") ||
+                $0.name.localizedCaseInsensitiveContains("RMC") ||
+                $0.name.localizedCaseInsensitiveContains("sport")
+            }
+        case .culture:
+            return searchFiltered.filter {
+                $0.subtitle.localizedCaseInsensitiveContains("culture") ||
+                $0.name.localizedCaseInsensitiveContains("France Culture") ||
+                $0.name.localizedCaseInsensitiveContains("France Inter")
             }
         }
     }
@@ -44,11 +92,11 @@ struct StationsView: View {
 
                         Spacer()
 
-                        // Bouton des paramètres (à implémenter)
+                        // Bouton des paramètres
                         Button(action: {
-                            // Action pour les paramètres
+                            showSettings = true
                         }) {
-                            Image(systemName: "gearshape.fill")
+                            Image(systemName: "info.circle")
                                 .font(.title2)
                                 .foregroundColor(.white)
                         }
@@ -98,24 +146,27 @@ struct StationsView: View {
                         // Catégories
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
-                                CategoryChip(title: "Toutes", isSelected: true)
-                                CategoryChip(title: "Favoris", isSelected: false)
-                                CategoryChip(title: "Actualités", isSelected: false)
-                                CategoryChip(title: "Musique", isSelected: false)
-                                CategoryChip(title: "Sport", isSelected: false)
-                                CategoryChip(title: "Culture", isSelected: false)
+                                ForEach(StationCategory.allCases, id: \.self) { category in
+                                    CategoryButton(
+                                        title: category.rawValue,
+                                        isSelected: selectedCategory == category,
+                                        action: {
+                                            selectedCategory = category
+                                        }
+                                    )
+                                }
                             }
                             .padding(.horizontal)
                             .padding(.top, 16)
                         }
 
-                        // Liste de stations
+                        // Liste de stations - version standard verticale
                         ScrollView {
                             LazyVStack(spacing: 16) {
                                 ForEach(filteredStations) { station in
-                                    NavigationLink(destination: PlayerView(station: station)
-                                        .environmentObject(viewModel)
-                                        .environmentObject(audioManager)) {
+                                    Button(action: {
+                                        handleStationTap(station)
+                                    }) {
                                         ModernStationCard(
                                             station: station,
                                             isFavorite: viewModel.isFavorite(station: station),
@@ -135,6 +186,13 @@ struct StationsView: View {
                         }
                     }
                 }
+
+                // Ajouter la vue Settings comme une feuille modale
+                if showSettings {
+                    SettingsView(isPresented: $showSettings)
+                        .transition(.opacity)
+                        .zIndex(100)
+                }
             }
             .navigationBarHidden(true)
             .task {
@@ -147,7 +205,6 @@ struct StationsView: View {
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
-        .preferredColorScheme(.dark)
     }
 
     // Gérer la lecture directement depuis la liste
@@ -158,23 +215,56 @@ struct StationsView: View {
         } else {
             // Sinon, lancer la lecture de la nouvelle station
             audioManager.play(station: station)
-            // IMPORTANT: Ceci définit audioManager.currentStation dans la méthode play
         }
     }
 }
 
-struct CategoryChip: View {
+struct CategoryButton: View {
     let title: String
     let isSelected: Bool
+    let action: () -> Void
+
+    // État pour une animation au toucher
+    @State private var isPressed = false
 
     var body: some View {
-        Text(title)
-            .font(.system(size: 14, weight: isSelected ? .bold : .medium))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(isSelected ? Color.blue : Color(white: 0.15))
-            .foregroundColor(isSelected ? .white : .gray)
-            .cornerRadius(20)
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 14, weight: isSelected ? .bold : .medium))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(isSelected ? Color.blue : Color(white: 0.15))
+                        .scaleEffect(isPressed ? 0.95 : 1.0)
+                )
+                .foregroundColor(isSelected ? .white : .gray)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .pressAction(onPress: {
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = true
+            }
+        }, onRelease: {
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = false
+            }
+        })
+    }
+}
+
+// Extension pour capturer les gestes de pression
+extension View {
+    func pressAction(onPress: @escaping (() -> Void), onRelease: @escaping (() -> Void)) -> some View {
+        self.simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    onPress()
+                }
+                .onEnded { _ in
+                    onRelease()
+                }
+        )
     }
 }
 

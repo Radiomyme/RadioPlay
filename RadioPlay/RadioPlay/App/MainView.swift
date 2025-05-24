@@ -16,9 +16,7 @@ struct MainView: View {
             StationsView()
                 .environmentObject(stationsViewModel)
                 .environmentObject(audioManager)
-                // Ajouter du padding en bas lorsque le mini-player est actif
-                .padding(.bottom, audioManager.currentStation != nil ? 70 : 0)
-                .animation(.easeInOut, value: audioManager.currentStation != nil)
+                // Pas besoin de padding fixe car le player avancé gère son propre espace
         }
     }
 }

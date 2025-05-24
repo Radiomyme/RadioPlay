@@ -15,7 +15,8 @@ struct Station: Identifiable, Decodable {
     let streamURL: String
     let imageURL: String?
     let logoURL: String?
-    
+    let categories: [String]?
+
     enum CodingKeys: String, CodingKey {
         case id
         case name = "radioName"
@@ -23,6 +24,18 @@ struct Station: Identifiable, Decodable {
         case streamURL = "radioStreamURL"
         case imageURL = "backgroundImage"
         case logoURL = "radioLogo"
+        case categories
+    }
+
+    // Initialisation avec valeurs par défaut pour rendre categories optionnel
+    init(id: String, name: String, subtitle: String, streamURL: String, imageURL: String?, logoURL: String?, categories: [String]? = nil) {
+        self.id = id
+        self.name = name
+        self.subtitle = subtitle
+        self.streamURL = streamURL
+        self.imageURL = imageURL
+        self.logoURL = logoURL
+        self.categories = categories
     }
 }
 

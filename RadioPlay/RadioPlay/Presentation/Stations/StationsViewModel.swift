@@ -6,7 +6,6 @@
 //
 
 
-// Presentation/Stations/StationsViewModel.swift
 import Foundation
 import Combine
 
@@ -61,5 +60,25 @@ class StationsViewModel: ObservableObject {
 
     func isFavorite(station: Station) -> Bool {
         return favoritesRepository.isFavorite(station.id)
+    }
+
+    // Nouvelles méthodes pour les catégories
+    func getStationsByCategory(category: String) -> [Station] {
+        // Filtre les stations par catégorie
+        if category.lowercased() == "all" || category.lowercased() == "toutes" {
+            return stations
+        } else if category.lowercased() == "favorites" || category.lowercased() == "favoris" {
+            return favoriteStations
+        } else {
+            // Recherche dans le tableau de catégories
+            return stations.filter { station in
+                if let categories = station.categories {
+                    return categories.contains { $0.lowercased() == category.lowercased() }
+                }
+                // Si pas de catégories définies, on fait une recherche texte
+                return station.name.lowercased().contains(category.lowercased()) ||
+                       station.subtitle.lowercased().contains(category.lowercased())
+            }
+        }
     }
 }
