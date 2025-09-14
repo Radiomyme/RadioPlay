@@ -1,5 +1,5 @@
 //
-//  AdvancedMiniPlayerView.swift - Version simplifiée et fonctionnelle
+//  AdvancedMiniPlayerView.swift - Version finale avec transitions fluides
 //  RadioPlay
 //
 //  Created by Martin Parmentier on 24/05/2025.
@@ -9,58 +9,47 @@ import SwiftUI
 
 struct AdvancedMiniPlayerView: View {
     @EnvironmentObject private var audioManager: AudioPlayerManager
-    @State private var expandProgress: CGFloat = 0 // 0 = mini, 1 = expanded
+    @State private var isExpanded = false
     @State private var dragOffset: CGFloat = 0
-    @State private var isDragging = false
     @State private var isSleepTimerPresented = false
     @State private var sleepTimerService = SleepTimerService()
 
-    @Namespace private var namespace
+    @Namespace private var animationNamespace
+
+    // Constantes pour le layout
+    private let miniPlayerHeight: CGFloat = 64
+    private let miniPlayerBottomPadding: CGFloat = 12
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Fond noir progressif
-                if expandProgress > 0 {
-                    Color.black
-                        .opacity(expandProgress * 0.8)
-                        .ignoresSafeArea()
-                }
-
-                // Fond artwork flou
-                if expandProgress > 0.3 {
-                    backgroundView
-                        .opacity(expandProgress)
-                        .ignoresSafeArea()
-                }
-
-                // Player principal
-                VStack {
-                    Spacer()
-
-                    playerView(geometry: geometry)
-                        .frame(height: playerHeight(geometry: geometry))
-                        .background(playerBackground)
-                        .cornerRadius(playerCornerRadius, corners: [.topLeft, .topRight])
-                        .shadow(
-                            color: Color.black.opacity(0.2 * (1 - expandProgress)),
-                            radius: 15 * (1 - expandProgress),
-                            x: 0,
-                            y: -8 * (1 - expandProgress)
-                        )
-                        .offset(y: dragOffset)
-                        .gesture(unifiedDragGesture)
-                        .onTapGesture {
-                            if expandProgress < 0.1 {
-                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                    expandProgress = 1.0
-                                }
-                            }
+        ZStack(alignment: .bottom) {
+            // Overlay noir pour le mode étendu
+            if isExpanded {
+                Color.black
+                    .opacity(0.8)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            isExpanded = false
                         }
-                }
+                    }
+            }
+
+            // Container principal
+            if isExpanded {
+                // Vue étendue
+                expandedPlayerView()
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.95).combined(with: .opacity),
+                        removal: .scale(scale: 0.95).combined(with: .opacity)
+                    ))
+            } else {
+                // Mini player
+                miniPlayerView()
+                    .transition(.move(edge: .bottom))
             }
         }
-        .animation(.interactiveSpring(response: 0.4, dampingFraction: 0.85), value: expandProgress)
+        .safeAreaPadding(.bottom, 12)
+        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: isExpanded)
         .sheet(isPresented: $isSleepTimerPresented) {
             SleepTimerView(
                 sleepTimerService: sleepTimerService,
@@ -71,404 +60,371 @@ struct AdvancedMiniPlayerView: View {
         }
     }
 
-    // MARK: - Main Player View
+    // MARK: - Mini Player View
 
-    private func playerView(geometry: GeometryProxy) -> some View {
-        VStack(spacing: 0) {
-            // Barre de progression (mini uniquement)
-            if expandProgress < 0.5 {
-                progressBar
-                    .opacity(1.0 - (expandProgress * 2.0))
-            }
-
-            // Indicateur de glissement (mode étendu)
-            if expandProgress > 0.5 {
-                VStack(spacing: 0) {
-                    Spacer().frame(height: 15)
-
-                    dragHandle
-                        .opacity(expandProgress)
-
-                    Spacer().frame(height: 15)
-                }
-            }
-
-            // Header (mode étendu)
-            if expandProgress > 0.5 {
-                headerView
-                    .opacity(expandProgress)
-                    .padding(.bottom, 20)
-            }
-
-            // Contenu principal
-            if expandProgress < 0.5 {
-                // Mode mini
-                miniPlayerContent
-                    .opacity(1.0 - (expandProgress * 2.0))
-            } else {
-                // Mode étendu
-                fullPlayerContent(geometry: geometry)
-                    .opacity((expandProgress - 0.5) * 2.0)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, expandProgress < 0.5 ? 16 : 0)
-    }
-
-    // MARK: - Mini Player Content
-
-    private var miniPlayerContent: some View {
+    private func miniPlayerView() -> some View {
         HStack(spacing: 12) {
-            // Artwork
-            artworkView
-                .matchedGeometryEffect(id: "artwork", in: namespace)
-
-            // Infos
-            VStack(alignment: .leading, spacing: 3) {
-                Text(audioManager.currentTrack?.title ?? audioManager.currentStation?.name ?? "")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .matchedGeometryEffect(id: "title", in: namespace)
-
-                Text(audioManager.currentTrack?.artist ?? audioManager.currentStation?.subtitle ?? "")
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
-                    .lineLimit(1)
-                    .matchedGeometryEffect(id: "subtitle", in: namespace)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Contrôles
-            HStack(spacing: 20) {
-                Button(action: { audioManager.togglePlayPause() }) {
-                    Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white)
-                }
-                .matchedGeometryEffect(id: "playButton", in: namespace)
-
-                Button(action: { audioManager.stop() }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16))
-                        .foregroundColor(.gray)
-                }
-            }
-        }
-        .padding(.vertical, 12)
-    }
-
-    // MARK: - Full Player Content
-
-    private func fullPlayerContent(geometry: GeometryProxy) -> some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            // Artwork centré
-            VStack {
-                artworkView
-                    .matchedGeometryEffect(id: "artwork", in: namespace)
-            }
-            .frame(maxWidth: .infinity)
-
-            Spacer()
-
-            // Infos piste
-            VStack(spacing: 10) {
-                if audioManager.isPlaying && !audioManager.isBuffering {
-                    AudioVisualizerView(isPlaying: audioManager.isPlaying)
-                        .frame(height: 22)
-                        .padding(.bottom, 8)
-                }
-
-                Text(audioManager.currentTrack?.title ?? "En direct")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .matchedGeometryEffect(id: "title", in: namespace)
-
-                Text(audioManager.currentTrack?.artist ?? audioManager.currentStation?.subtitle ?? "")
-                    .font(.system(size: 18))
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .matchedGeometryEffect(id: "subtitle", in: namespace)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 30)
-
-            Spacer()
-
-            // Contrôles principaux
-            HStack(spacing: 55) {
-                Button(action: shareCurrentTrack) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white)
-                        .frame(width: 50, height: 50)
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(Circle())
-                }
-
-                Button(action: { audioManager.togglePlayPause() }) {
-                    Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(.black)
-                        .frame(width: 75, height: 75)
-                        .background(Color.white)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                }
-                .matchedGeometryEffect(id: "playButton", in: namespace)
-
-                Button(action: openInAppleMusic) {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white)
-                        .frame(width: 50, height: 50)
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(Circle())
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 25)
-
-            // Contrôles additionnels
-            HStack(spacing: 75) {
-                Button(action: { isSleepTimerPresented = true }) {
-                    Image(systemName: sleepTimerService.isActive ? "timer.circle.fill" : "timer.circle")
-                        .font(.system(size: 24))
-                        .foregroundColor(sleepTimerService.isActive ? .blue : .white.opacity(0.7))
-                }
-
-                AirPlayButton()
-                    .frame(width: 24, height: 24)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 35)
-        }
-    }
-
-    // MARK: - Header View
-
-    private var headerView: some View {
-        ZStack {
-            // Bouton gauche
-            HStack {
-                Button(action: {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        expandProgress = 0
-                    }
-                }) {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
-                        .background(Color.black.opacity(0.2))
-                        .clipShape(Circle())
-                }
-                Spacer()
-            }
-
-            // Titre centré
-            Text(audioManager.currentStation?.name ?? "")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-
-            // Bouton droite
-            HStack {
-                Spacer()
-                Button(action: {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        expandProgress = 0
-                    }
-                }) {
-                    Image(systemName: "minus.circle")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
-                        .frame(width: 40, height: 40)
-                        .background(Color.black.opacity(0.15))
-                        .clipShape(Circle())
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-    }
-
-    // MARK: - Components
-
-    private var backgroundView: some View {
-        ZStack {
-            if let artwork = audioManager.artwork {
-                Image(uiImage: artwork)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .blur(radius: 50)
-                    .opacity(0.4)
-            }
-
-            LinearGradient(
-                colors: [
-                    Color.black.opacity(0.3),
-                    Color.black.opacity(0.8)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-    }
-
-    private var dragHandle: some View {
-        RoundedRectangle(cornerRadius: 2.5)
-            .fill(Color.white.opacity(0.4))
-            .frame(width: 36, height: 5)
-    }
-
-    private var progressBar: some View {
-        ZStack(alignment: .leading) {
-            Rectangle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(height: 2)
-
-            if audioManager.isPlaying && !audioManager.isBuffering {
-                HStack(spacing: 1) {
-                    ForEach(0..<12, id: \.self) { index in
-                        Rectangle()
-                            .fill(Color.blue)
-                            .frame(height: 2)
-                            .scaleEffect(y: CGFloat.random(in: 0.3...1.0), anchor: .bottom)
-                            .animation(
-                                .easeInOut(duration: 0.15)
-                                .repeatForever(autoreverses: true)
-                                .delay(Double(index) * 0.04),
-                                value: audioManager.isPlaying
-                            )
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
-    private var artworkView: some View {
-        ZStack {
-            let size: CGFloat = expandProgress < 0.5 ? 50 : 240
-            let cornerRadius: CGFloat = expandProgress < 0.5 ? 8 : 18
-
-            Group {
+            // Artwork avec animation
+            ZStack {
                 if let artwork = audioManager.artwork {
                     Image(uiImage: artwork)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .matchedGeometryEffect(id: "artwork", in: animationNamespace)
                 } else {
                     AsyncImage(url: URL(string: audioManager.currentStation?.logoURL ?? "")) { phase in
                         switch phase {
                         case .empty:
-                            RoundedRectangle(cornerRadius: cornerRadius)
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.gray.opacity(0.2))
+                                .frame(width: 48, height: 48)
                         case .success(let image):
-                            image.resizable().aspectRatio(contentMode: .fill)
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 48, height: 48)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         case .failure:
-                            RoundedRectangle(cornerRadius: cornerRadius)
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.gray.opacity(0.2))
+                                .frame(width: 48, height: 48)
                                 .overlay(
                                     Image(systemName: "radio")
-                                        .font(.system(size: size * 0.25))
                                         .foregroundColor(.gray)
                                 )
                         @unknown default:
                             EmptyView()
                         }
                     }
+                    .matchedGeometryEffect(id: "artwork", in: animationNamespace)
+                }
+
+                if audioManager.isBuffering {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                        .frame(width: 48, height: 48)
+                        .background(Color.black.opacity(0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .shadow(
-                color: .black.opacity(expandProgress > 0.5 ? 0.4 : 0),
-                radius: expandProgress > 0.5 ? 20 : 0,
-                x: 0,
-                y: expandProgress > 0.5 ? 12 : 0
+
+            // Infos avec animation
+            VStack(alignment: .leading, spacing: 3) {
+                Text(audioManager.currentTrack?.title ?? audioManager.currentStation?.name ?? "")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .matchedGeometryEffect(id: "title", in: animationNamespace)
+
+                Text(audioManager.currentTrack?.artist ?? audioManager.currentStation?.subtitle ?? "")
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                    .lineLimit(1)
+                    .matchedGeometryEffect(id: "subtitle", in: animationNamespace)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Visualiseur audio simple (remplace la barre de progression)
+            if audioManager.isPlaying && !audioManager.isBuffering {
+                HStack(spacing: 2) {
+                    ForEach(0..<3, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.white.opacity(0.7))
+                            .frame(width: 3, height: CGFloat.random(in: 8...20))
+                            .animation(
+                                .easeInOut(duration: 0.5)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(index) * 0.1),
+                                value: audioManager.isPlaying
+                            )
+                    }
+                }
+                .padding(.trailing, 8)
+            }
+
+            // Contrôles
+            Button(action: { audioManager.togglePlayPause() }) {
+                Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .matchedGeometryEffect(id: "playButton", in: animationNamespace)
+            }
+
+            Button(action: { audioManager.stop() }) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.gray)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(red: 0.11, green: 0.11, blue: 0.11))
+                .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: -5)
+        )
+        .padding(.horizontal, 8)
+        .padding(.bottom, miniPlayerBottomPadding)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                isExpanded = true
+            }
+        }
+    }
+
+    // MARK: - Expanded Player View
+
+    private func expandedPlayerView() -> some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Drag Handle
+                HStack {
+                    Spacer()
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.5))
+                        .frame(width: 40, height: 5)
+                        .padding(.top, 10)
+                        .padding(.bottom, 5)
+                    Spacer()
+                }
+
+                // Header
+                expandedHeader()
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+
+                // Contenu centré verticalement
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+
+                    // Artwork avec animation
+                    ZStack {
+                        if let artwork = audioManager.artwork {
+                            Image(uiImage: artwork)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 280, height: 280)
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .shadow(color: .black.opacity(0.5), radius: 30, x: 0, y: 15)
+                                .matchedGeometryEffect(id: "artwork", in: animationNamespace)
+                        } else {
+                            AsyncImage(url: URL(string: audioManager.currentStation?.logoURL ?? "")) { phase in
+                                switch phase {
+                                case .empty:
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(width: 280, height: 280)
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 280, height: 280)
+                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                                        .shadow(color: .black.opacity(0.5), radius: 30, x: 0, y: 15)
+                                case .failure:
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(width: 280, height: 280)
+                                        .overlay(
+                                            Image(systemName: "radio")
+                                                .font(.system(size: 70))
+                                                .foregroundColor(.gray)
+                                        )
+                                @unknown default:
+                                    EmptyView()
+                                }
+                            }
+                            .matchedGeometryEffect(id: "artwork", in: animationNamespace)
+                        }
+
+                        if audioManager.isBuffering {
+                            VStack {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(1.5)
+
+                                Text("Chargement...")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                    .padding(.top, 10)
+                            }
+                            .frame(width: 280, height: 280)
+                            .background(Color.black.opacity(0.5))
+                            .cornerRadius(20)
+                        }
+                    }
+                    .padding(.bottom, 50)
+
+                    // Infos piste avec animation
+                    VStack(spacing: 12) {
+                        if audioManager.isPlaying && !audioManager.isBuffering {
+                            AudioVisualizerView(isPlaying: audioManager.isPlaying)
+                                .frame(height: 24)
+                                .padding(.horizontal, 60)
+                                .padding(.bottom, 8)
+                        }
+
+                        Text(audioManager.currentTrack?.title ?? "En direct")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .padding(.horizontal, 40)
+                            .matchedGeometryEffect(id: "title", in: animationNamespace)
+
+                        Text(audioManager.currentTrack?.artist ?? audioManager.currentStation?.subtitle ?? "")
+                            .font(.system(size: 18))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .padding(.horizontal, 40)
+                            .matchedGeometryEffect(id: "subtitle", in: animationNamespace)
+                    }
+                    .padding(.bottom, 60)
+
+                    // Contrôles principaux
+                    HStack(spacing: 60) {
+                        controlButton(
+                            icon: "square.and.arrow.up",
+                            size: 22,
+                            action: shareCurrentTrack
+                        )
+
+                        // Bouton play/pause principal avec animation
+                        Button(action: { audioManager.togglePlayPause() }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 80, height: 80)
+
+                                Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 32, weight: .medium))
+                                    .foregroundColor(.black)
+                                    .matchedGeometryEffect(id: "playButton", in: animationNamespace)
+                            }
+                            .shadow(color: .white.opacity(0.2), radius: 15, x: 0, y: 5)
+                        }
+
+                        controlButton(
+                            icon: "music.note",
+                            size: 22,
+                            action: openInAppleMusic
+                        )
+                    }
+                    .padding(.bottom, 40)
+
+                    // Contrôles secondaires
+                    HStack(spacing: 80) {
+                        Button(action: { isSleepTimerPresented = true }) {
+                            Image(systemName: sleepTimerService.isActive ? "timer.circle.fill" : "timer.circle")
+                                .font(.system(size: 26))
+                                .foregroundColor(sleepTimerService.isActive ? .blue : .white.opacity(0.7))
+                        }
+
+                        AirPlayButton()
+                            .frame(width: 26, height: 26)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .frame(maxHeight: .infinity)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .background(
+                ZStack {
+                    // Fond avec artwork flou
+                    if let artwork = audioManager.artwork {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .blur(radius: 60)
+                            .opacity(0.3)
+                    }
+
+                    // Gradient overlay
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(0.3),
+                            Color.black.opacity(0.9)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+                .ignoresSafeArea()
             )
+            .offset(y: dragOffset)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        if value.translation.height > 0 {
+                            dragOffset = value.translation.height * 0.5
+                        }
+                    }
+                    .onEnded { value in
+                        if value.translation.height > 100 || value.velocity.height > 800 {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                isExpanded = false
+                            }
+                        }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = 0
+                        }
+                    }
+            )
+        }
+        .ignoresSafeArea()
+    }
 
-            if audioManager.isBuffering {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    .scaleEffect(expandProgress < 0.5 ? 0.8 : 1.2)
-                    .frame(width: size, height: size)
-                    .background(Color.black.opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    // MARK: - Components
+
+    private func expandedHeader() -> some View {
+        HStack {
+            Button(action: {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    isExpanded = false
+                }
+            }) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.black.opacity(0.3))
+                    .clipShape(Circle())
             }
+
+            Spacer()
+
+            Text(audioManager.currentStation?.name ?? "")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+
+            Spacer()
+
+            // Espace pour équilibrer
+            Color.clear.frame(width: 44, height: 44)
         }
     }
 
-    // MARK: - Computed Properties
-
-    private func playerHeight(geometry: GeometryProxy) -> CGFloat {
-        let minHeight: CGFloat = 70
-        let maxHeight = geometry.size.height - 90
-        return minHeight + (maxHeight - minHeight) * expandProgress
-    }
-
-    private var playerCornerRadius: CGFloat {
-        12 * (1 - expandProgress)
-    }
-
-    private var playerBackground: Color {
-        if expandProgress > 0.3 {
-            return Color.clear
-        } else {
-            return Color(red: 0.11, green: 0.11, blue: 0.11)
+    private func controlButton(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: size))
+                .foregroundColor(.white)
+                .frame(width: 50, height: 50)
+                .background(Color.white.opacity(0.1))
+                .clipShape(Circle())
         }
-    }
-
-    // MARK: - Unified Drag Gesture
-
-    private var unifiedDragGesture: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                isDragging = true
-                let translation = value.translation.height
-
-                if expandProgress < 0.5 {
-                    // Mode mini - glissement vers le haut
-                    if translation < 0 {
-                        dragOffset = translation * 0.8
-                        let progress = min(1.0, abs(translation) / 120)
-                        expandProgress = progress
-                    }
-                } else {
-                    // Mode étendu - glissement vers le bas
-                    if translation > 0 {
-                        dragOffset = translation * 0.8
-                        let progress = max(0.0, 1.0 - (translation / 150))
-                        expandProgress = progress
-                    }
-                }
-            }
-            .onEnded { value in
-                isDragging = false
-                let velocity = value.translation.height
-
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                    if expandProgress < 0.5 {
-                        if velocity < -40 || expandProgress > 0.3 {
-                            expandProgress = 1.0
-                        } else {
-                            expandProgress = 0.0
-                        }
-                    } else {
-                        if velocity > 50 || expandProgress < 0.7 {
-                            expandProgress = 0.0
-                        } else {
-                            expandProgress = 1.0
-                        }
-                    }
-                    dragOffset = 0
-                }
-            }
     }
 
     // MARK: - Helper Functions
@@ -512,24 +468,3 @@ struct AdvancedMiniPlayerView: View {
     }
 }
 
-// MARK: - Extensions
-
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
-
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
-    }
-}
