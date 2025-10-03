@@ -3,12 +3,13 @@ import SwiftUI
 struct StationsView: View {
     @StateObject private var viewModel = StationsViewModel()
     @EnvironmentObject private var audioManager: AudioPlayerManager
+    @Environment(\.colorScheme) var colorScheme  // ✅ Détection du thème
     @State private var searchText = ""
     @State private var selectedCategory: StationCategory = .all
     @State private var showSettings = false
-    @State private var isSearchExpanded = false  // ✅ NOUVEAU
-    @FocusState private var isSearchFocused: Bool  // ✅ NOUVEAU
-    @State private var showAddStation = false  // ✅ NOUVEAU
+    @State private var isSearchExpanded = false
+    @FocusState private var isSearchFocused: Bool
+    @State private var showAddStation = false  // ✅ État pour le sheet
 
     enum StationCategory: String, CaseIterable {
         case all = "Toutes"
@@ -18,7 +19,6 @@ struct StationsView: View {
         case sport = "Sport"
         case culture = "Culture"
 
-        // ✅ NOUVEAU - Icônes pour chaque catégorie
         var icon: String {
             switch self {
             case .all: return "radio"
@@ -43,55 +43,80 @@ struct StationsView: View {
     }
 
     var filteredStations: [Station] {
-        let searchFiltered = searchText.isEmpty ?
-            viewModel.stations :
-            viewModel.stations.filter {
+        let searchFiltered: [Station]
+
+        if searchText.isEmpty {
+            searchFiltered = viewModel.stations
+        } else {
+            searchFiltered = viewModel.stations.filter {
                 $0.name.localizedCaseInsensitiveContains(searchText) ||
                 $0.subtitle.localizedCaseInsensitiveContains(searchText)
             }
+        }
 
+        return filterByCategory(searchFiltered)
+    }
+
+    // ✅ Filtre par catégorie - séparé pour simplifier
+    private func filterByCategory(_ stations: [Station]) -> [Station] {
         switch selectedCategory {
         case .all:
-            return searchFiltered
+            return stations
         case .favorites:
-            return searchFiltered.filter { viewModel.isFavorite(station: $0) }
+            return stations.filter { viewModel.isFavorite(station: $0) }
         case .news:
-            return searchFiltered.filter {
-                $0.subtitle.localizedCaseInsensitiveContains("info") ||
-                $0.subtitle.localizedCaseInsensitiveContains("actualité") ||
-                $0.name.localizedCaseInsensitiveContains("info") ||
-                $0.name.localizedCaseInsensitiveContains("france info")
-            }
+            return filterNewsStations(stations)
         case .music:
-            return searchFiltered.filter {
-                $0.subtitle.localizedCaseInsensitiveContains("music") ||
-                $0.subtitle.localizedCaseInsensitiveContains("hit") ||
-                $0.name.localizedCaseInsensitiveContains("NRJ") ||
-                $0.name.localizedCaseInsensitiveContains("RTL2") ||
-                $0.name.localizedCaseInsensitiveContains("Fun") ||
-                $0.name.localizedCaseInsensitiveContains("Skyrock") ||
-                $0.name.localizedCaseInsensitiveContains("Virgin") ||
-                $0.name.localizedCaseInsensitiveContains("Radio Classique")
-            }
+            return filterMusicStations(stations)
         case .sport:
-            return searchFiltered.filter {
-                $0.subtitle.localizedCaseInsensitiveContains("sport") ||
-                $0.name.localizedCaseInsensitiveContains("RMC") ||
-                $0.name.localizedCaseInsensitiveContains("sport")
-            }
+            return filterSportStations(stations)
         case .culture:
-            return searchFiltered.filter {
-                $0.subtitle.localizedCaseInsensitiveContains("culture") ||
-                $0.name.localizedCaseInsensitiveContains("France Culture") ||
-                $0.name.localizedCaseInsensitiveContains("France Inter")
-            }
+            return filterCultureStations(stations)
         }
     }
 
-    var body: some View {
-        NavigationView {
-            ZStack {
-                // Fond avec dégradé
+    private func filterNewsStations(_ stations: [Station]) -> [Station] {
+        stations.filter {
+            $0.subtitle.localizedCaseInsensitiveContains("info") ||
+            $0.subtitle.localizedCaseInsensitiveContains("actualité") ||
+            $0.name.localizedCaseInsensitiveContains("info") ||
+            $0.name.localizedCaseInsensitiveContains("france info")
+        }
+    }
+
+    private func filterMusicStations(_ stations: [Station]) -> [Station] {
+        stations.filter {
+            $0.subtitle.localizedCaseInsensitiveContains("music") ||
+            $0.subtitle.localizedCaseInsensitiveContains("hit") ||
+            $0.name.localizedCaseInsensitiveContains("NRJ") ||
+            $0.name.localizedCaseInsensitiveContains("RTL2") ||
+            $0.name.localizedCaseInsensitiveContains("Fun") ||
+            $0.name.localizedCaseInsensitiveContains("Skyrock") ||
+            $0.name.localizedCaseInsensitiveContains("Virgin") ||
+            $0.name.localizedCaseInsensitiveContains("Radio Classique")
+        }
+    }
+
+    private func filterSportStations(_ stations: [Station]) -> [Station] {
+        stations.filter {
+            $0.subtitle.localizedCaseInsensitiveContains("sport") ||
+            $0.name.localizedCaseInsensitiveContains("RMC") ||
+            $0.name.localizedCaseInsensitiveContains("sport")
+        }
+    }
+
+    private func filterCultureStations(_ stations: [Station]) -> [Station] {
+        stations.filter {
+            $0.subtitle.localizedCaseInsensitiveContains("culture") ||
+            $0.name.localizedCaseInsensitiveContains("France Culture") ||
+            $0.name.localizedCaseInsensitiveContains("France Inter")
+        }
+    }
+
+    // ✅ Propriété calculée pour le fond - évite l'erreur de compilation
+    private var backgroundGradient: some View {
+        Group {
+            if colorScheme == .dark {
                 LinearGradient(
                     gradient: Gradient(colors: [
                         Color.black,
@@ -100,77 +125,26 @@ struct StationsView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 0.95, green: 0.95, blue: 0.97),
+                        Color.white
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        }
+    }
 
-                VStack(spacing: 0) {
-                    // ✅ NOUVEAU - En-tête compact avec recherche intégrée
-                    compactHeader
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .padding(.bottom, 12)
+    var body: some View {
+        NavigationView {
+            ZStack {
+                backgroundGradient
+                    .ignoresSafeArea()
 
-                    // ✅ NOUVEAU - Catégories redessinées
-                    modernCategoriesBar
-                        .padding(.bottom, 8)
-
-                    // Indicateur de chargement en arrière-plan
-                    if viewModel.isLoading && !viewModel.stations.isEmpty {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.7)
-                            Text("Mise à jour...")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 6)
-                    }
-
-                    // Contenu principal
-                    if !viewModel.hasInitiallyLoaded && viewModel.stations.isEmpty {
-                        InitialLoadingView()
-                    } else if let errorMessage = viewModel.errorMessage, viewModel.stations.isEmpty {
-                        ErrorView(message: errorMessage) {
-                            Task {
-                                await viewModel.loadStations()
-                            }
-                        }
-                    } else if filteredStations.isEmpty {
-                        EmptyStateView(
-                            category: selectedCategory,
-                            searchText: searchText
-                        )
-                    } else {
-                        stationsList
-                    }
-                }
-
-                // ✅ NOUVEAU - Bouton flottant pour ajouter une station
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            showAddStation = true
-                        }) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.blue, Color.blue.opacity(0.8)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .clipShape(Circle())
-                                .shadow(color: Color.blue.opacity(0.5), radius: 15, x: 0, y: 8)
-                        }
-                        .padding(.trailing, 20)
-                        .padding(.bottom, 100) // Au-dessus du mini player
-                    }
-                }
+                mainContent
 
                 if showSettings {
                     SettingsView(isPresented: $showSettings)
@@ -187,90 +161,209 @@ struct StationsView: View {
             .refreshable {
                 await viewModel.loadStations()
             }
+            .sheet(isPresented: $showAddStation) {
+                AddCustomStationView(viewModel: viewModel)
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
 
+    // ✅ Contenu principal
+    @ViewBuilder
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            compactHeader
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+
+            modernCategoriesBar
+                .padding(.bottom, 8)
+
+            loadingIndicator
+
+            contentArea
+        }
+    }
+
+    // ✅ Indicateur de chargement
+    @ViewBuilder
+    private var loadingIndicator: some View {
+        if viewModel.isLoading && !viewModel.stations.isEmpty {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .dark ? .white : .blue))
+                    .scaleEffect(0.7)
+                Text("Mise à jour...")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding(.vertical, 6)
+        }
+    }
+
+    // ✅ Zone de contenu principal
+    @ViewBuilder
+    private var contentArea: some View {
+        if !viewModel.hasInitiallyLoaded && viewModel.stations.isEmpty {
+            InitialLoadingView()
+        } else if let errorMessage = viewModel.errorMessage, viewModel.stations.isEmpty {
+            ErrorView(message: errorMessage) {
+                Task {
+                    await viewModel.loadStations()
+                }
+            }
+        } else if filteredStations.isEmpty {
+            EmptyStateView(
+                category: selectedCategory,
+                searchText: searchText
+            )
+        } else {
+            stationsList
+        }
+    }
+
     // MARK: - Composants
 
-    // ✅ NOUVEAU - En-tête compact
+    // ✅ En-tête avec bouton "+" intégré - DÉCOMPOSÉ
     private var compactHeader: some View {
         HStack(spacing: 12) {
             // Titre ou barre de recherche
-            if isSearchExpanded {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                        .font(.system(size: 16))
+            headerLeftContent
 
-                    TextField("Rechercher", text: $searchText)
-                        .foregroundColor(.white)
-                        .focused($isSearchFocused)
-                        .autocorrectionDisabled()
-
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 16))
-                        }
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(10)
-                .transition(.scale.combined(with: .opacity))
-            } else {
-                Text("Radio Play")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                    .transition(.scale.combined(with: .opacity))
-
-                Spacer()
-            }
+            Spacer()
 
             // Boutons d'action
-            HStack(spacing: 12) {
-                // Bouton recherche
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        isSearchExpanded.toggle()
-                        if isSearchExpanded {
-                            isSearchFocused = true
-                        } else {
-                            searchText = ""
-                            isSearchFocused = false
-                        }
-                    }
-                }) {
-                    Image(systemName: isSearchExpanded ? "xmark" : "magnifyingglass")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(Circle())
-                }
-
-                // Bouton paramètres
-                if !isSearchExpanded {
-                    Button(action: {
-                        showSettings = true
-                    }) {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 40)
-                            .background(Color.white.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
+            headerRightButtons
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSearchExpanded)
+    }
+
+    // ✅ Partie gauche du header
+    @ViewBuilder
+    private var headerLeftContent: some View {
+        if isSearchExpanded {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 16))
+
+                TextField("Rechercher", text: $searchText)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .focused($isSearchFocused)
+                    .autocorrectionDisabled()
+
+                if !searchText.isEmpty {
+                    Button(action: {
+                        searchText = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(headerSearchBackground)
+            .cornerRadius(10)
+            .transition(.scale.combined(with: .opacity))
+        } else {
+            Text("Radio Play")
+                .font(.system(size: 26, weight: .bold, design: .rounded))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .transition(.scale.combined(with: .opacity))
+        }
+    }
+
+    // ✅ Fond de la barre de recherche
+    private var headerSearchBackground: Color {
+        colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05)
+    }
+
+    // ✅ Boutons à droite du header
+    @ViewBuilder
+    private var headerRightButtons: some View {
+        HStack(spacing: 12) {
+            // Bouton "+" pour ajouter une station
+            if !isSearchExpanded {
+                addStationButton
+            }
+
+            // Bouton recherche
+            searchButton
+
+            // Bouton paramètres
+            if !isSearchExpanded {
+                settingsButton
+            }
+        }
+    }
+
+    // ✅ Bouton ajouter station
+    private var addStationButton: some View {
+        Button(action: {
+            showAddStation = true
+        }) {
+            Image(systemName: "plus")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 40, height: 40)
+                .background(addButtonGradient)
+                .clipShape(Circle())
+                .shadow(color: Color.blue.opacity(0.4), radius: 8, x: 0, y: 4)
+        }
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    private var addButtonGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.blue, Color.blue.opacity(0.8)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    // ✅ Bouton recherche
+    private var searchButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                isSearchExpanded.toggle()
+                if isSearchExpanded {
+                    isSearchFocused = true
+                } else {
+                    searchText = ""
+                    isSearchFocused = false
+                }
+            }
+        }) {
+            Image(systemName: isSearchExpanded ? "xmark" : "magnifyingglass")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .frame(width: 40, height: 40)
+                .background(buttonBackground)
+                .clipShape(Circle())
+        }
+    }
+
+    // ✅ Bouton paramètres
+    private var settingsButton: some View {
+        Button(action: {
+            showSettings = true
+        }) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .frame(width: 40, height: 40)
+                .background(buttonBackground)
+                .clipShape(Circle())
+        }
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    // ✅ Fond des boutons
+    private var buttonBackground: Color {
+        colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05)
     }
 
     private var modernCategoriesBar: some View {
@@ -284,7 +377,6 @@ struct StationsView: View {
                             action: {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     selectedCategory = category
-                                    // ✅ Scroll vers la catégorie sélectionnée
                                     proxy.scrollTo(category, anchor: .center)
                                 }
                             }
@@ -294,40 +386,44 @@ struct StationsView: View {
                 }
                 .padding(.horizontal, 16)
             }
-            .scrollIndicators(.hidden)  // iOS 16+, sinon supprimer cette ligne
         }
     }
 
-    // Liste des stations
+    // Liste des stations - simplifié
     private var stationsList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(filteredStations) { station in
-                    Button(action: {
-                        handleStationTap(station)
-                    }) {
-                        CompactStationCard(
-                            station: station,
-                            isFavorite: viewModel.isFavorite(station: station),
-                            isPlaying: audioManager.currentStation?.id == station.id && audioManager.isPlaying,
-                            onFavoriteToggle: {
-                                viewModel.toggleFavorite(station: station)
-                            },
-                            onPlayToggle: {
-                                handleStationTap(station)
-                            },
-                            onDelete: viewModel.isCustomStation(station.id) ? {
-                                viewModel.removeCustomStation(station.id)
-                            } : nil,
-                            isCustom: viewModel.isCustomStation(station.id)
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
+                    stationButton(for: station)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 100) // Espace pour le mini player
+            .padding(.bottom, 100)
         }
+    }
+
+    // ✅ Bouton pour chaque station
+    private func stationButton(for station: Station) -> some View {
+        Button(action: {
+            handleStationTap(station)
+        }) {
+            CompactStationCard(
+                station: station,
+                isFavorite: viewModel.isFavorite(station: station),
+                isPlaying: audioManager.currentStation?.id == station.id && audioManager.isPlaying,
+                onFavoriteToggle: {
+                    viewModel.toggleFavorite(station: station)
+                },
+                onPlayToggle: {
+                    handleStationTap(station)
+                },
+                onDelete: viewModel.isCustomStation(station.id) ? {
+                    viewModel.removeCustomStation(station.id)
+                } : nil,
+                isCustom: viewModel.isCustomStation(station.id)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 
     private func handleStationTap(_ station: Station) {
@@ -339,11 +435,13 @@ struct StationsView: View {
     }
 }
 
-// ✅ NOUVEAU - Bouton de catégorie moderne
+// ✅ Bouton de catégorie moderne
 struct ModernCategoryButton: View {
     let category: StationsView.StationCategory
     let isSelected: Bool
     let action: () -> Void
+
+    @Environment(\.colorScheme) var colorScheme  // ✅ Détection du thème
 
     @State private var isPressed = false
 
@@ -356,7 +454,7 @@ struct ModernCategoryButton: View {
                 Text(category.rawValue)
                     .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
             }
-            .foregroundColor(isSelected ? .white : .gray)
+            .foregroundColor(isSelected ? .white : (colorScheme == .dark ? .gray : Color(white: 0.4)))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(
@@ -376,7 +474,7 @@ struct ModernCategoryButton: View {
                             .shadow(color: category.color.opacity(0.4), radius: 8, x: 0, y: 4)
                     } else {
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.white.opacity(0.08))
+                            .fill(colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.05))
                     }
                 }
             )
@@ -395,128 +493,210 @@ struct ModernCategoryButton: View {
     }
 }
 
-// ✅ NOUVEAU - Carte de station plus compacte
+// ✅ Carte de station plus compacte
 struct CompactStationCard: View {
     let station: Station
     let isFavorite: Bool
     let isPlaying: Bool
     let onFavoriteToggle: () -> Void
     let onPlayToggle: () -> Void
-    let onDelete: (() -> Void)?  // ✅ NOUVEAU
-    let isCustom: Bool  // ✅ NOUVEAU
+    let onDelete: (() -> Void)?
+    let isCustom: Bool
+
+    @Environment(\.colorScheme) var colorScheme
+    @State private var showDeleteAlert = false
 
     var body: some View {
         HStack(spacing: 12) {
-            // Logo de la station
-            AsyncImage(url: URL(string: station.logoURL ?? "")) { phase in
+            stationLogo
+            stationInfo
+            Spacer()
+            actionButtons
+        }
+        .padding(12)
+        .background(cardBackground)
+        .alert("Supprimer cette station ?", isPresented: $showDeleteAlert) {
+            Button("Annuler", role: .cancel) { }
+            Button("Supprimer", role: .destructive) {
+                onDelete?()
+            }
+        } message: {
+            Text("Cette action est irréversible.")
+        }
+    }
+
+    // ✅ Logo de la station
+    private var stationLogo: some View {
+        AsyncImage(url: URL(string: station.logoURL ?? "")) { phase in
+            Group {
                 switch phase {
                 case .empty:
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(white: 0.15))
-                        .frame(width: 56, height: 56)
-                        .overlay(
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.7)
-                        )
+                    logoPlaceholder
+                        .overlay(ProgressView().progressViewStyle(CircularProgressViewStyle(tint: foregroundColor)).scaleEffect(0.7))
                 case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 56, height: 56)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .shadow(color: isPlaying ? Color.blue.opacity(0.4) : Color.black.opacity(0.2), radius: isPlaying ? 8 : 4, x: 0, y: 2)
+                    image.resizable().aspectRatio(contentMode: .fit)
                 case .failure:
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(white: 0.15))
-                        .frame(width: 56, height: 56)
-                        .overlay(
-                            Image(systemName: "radio")
-                                .font(.system(size: 24))
-                                .foregroundColor(.gray)
-                        )
+                    logoPlaceholder.overlay(Image(systemName: "radio").font(.system(size: 24)).foregroundColor(.gray))
                 @unknown default:
                     EmptyView()
                 }
             }
+            .frame(width: 56, height: 56)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .shadow(color: isPlaying ? Color.blue.opacity(0.4) : Color.black.opacity(0.2), radius: isPlaying ? 8 : 4, x: 0, y: 2)
+        }
+    }
 
-            // Infos de la station
-            VStack(alignment: .leading, spacing: 4) {
+    private var logoPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(logoBackgroundColor)
+    }
+
+    // ✅ Infos de la station
+    private var stationInfo: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
                 Text(station.name)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(titleColor)
                     .lineLimit(1)
 
-                Text(station.subtitle)
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
-                    .lineLimit(1)
-
-                // Statut
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(isPlaying ? Color.green : Color.red)
-                        .frame(width: 6, height: 6)
-
-                    Text(isPlaying ? "En écoute" : "En direct")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.gray)
+                if isCustom {
+                    customBadge
                 }
             }
 
-            Spacer()
+            Text(station.subtitle)
+                .font(.system(size: 13))
+                .foregroundColor(.gray)
+                .lineLimit(1)
 
-            // Boutons d'action
-            HStack(spacing: 8) {
-                // Favori
-                Button(action: onFavoriteToggle) {
-                    Image(systemName: isFavorite ? "heart.fill" : "heart")
-                        .font(.system(size: 18))
-                        .foregroundColor(isFavorite ? .red : .gray)
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.05))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                // Lecture
-                Button(action: onPlayToggle) {
-                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .fill(isPlaying ? Color.green : Color.blue)
-                                .shadow(color: isPlaying ? Color.green.opacity(0.4) : Color.blue.opacity(0.4), radius: 6, x: 0, y: 2)
-                        )
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
+            statusIndicator
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(white: 0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(isPlaying ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 1)
-                )
-        )
-        // ✅ NOUVEAU - Menu contextuel pour les stations custom
-                .contextMenu {
-                    if isCustom {
-                        Button(role: .destructive, action: {
-                            onDelete?()
-                        }) {
-                            Label("Supprimer", systemImage: "trash")
-                        }
-                    }
-                }
+    }
+
+    private var customBadge: some View {
+        Text("Custom")
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundColor(.blue)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color.blue.opacity(0.2))
+            .cornerRadius(4)
+    }
+
+    private var statusIndicator: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(isPlaying ? Color.green : Color.red)
+                .frame(width: 6, height: 6)
+
+            Text(isPlaying ? "En écoute" : "En direct")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.gray)
+        }
+    }
+
+    // ✅ Boutons d'action
+    private var actionButtons: some View {
+        HStack(spacing: 8) {
+            if isCustom {
+                deleteButton
+            }
+            favoriteButton
+            playButton
+        }
+    }
+
+    private var deleteButton: some View {
+        Button(action: { showDeleteAlert = true }) {
+            Image(systemName: "trash")
+                .font(.system(size: 16))
+                .foregroundColor(.red)
+                .frame(width: 36, height: 36)
+                .background(Color.red.opacity(0.1))
+                .clipShape(Circle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private var favoriteButton: some View {
+        Button(action: onFavoriteToggle) {
+            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                .font(.system(size: 18))
+                .foregroundColor(isFavorite ? .red : .gray)
+                .frame(width: 36, height: 36)
+                .background(buttonBackgroundColor)
+                .clipShape(Circle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private var playButton: some View {
+        Button(action: onPlayToggle) {
+            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+                .frame(width: 36, height: 36)
+                .background(playButtonBackground)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private var playButtonBackground: some View {
+        Circle()
+            .fill(isPlaying ? Color.green : Color.blue)
+            .shadow(color: isPlaying ? Color.green.opacity(0.4) : Color.blue.opacity(0.4), radius: 6, x: 0, y: 2)
+    }
+
+    // ✅ Propriétés calculées pour les couleurs
+    private var foregroundColor: Color {
+        colorScheme == .dark ? .white : .gray
+    }
+
+    private var logoBackgroundColor: Color {
+        colorScheme == .dark ? Color(white: 0.15) : Color(white: 0.9)
+    }
+
+    private var titleColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+
+    private var buttonBackgroundColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05)
+    }
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 14)
+            .fill(cardBackgroundColor)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(cardBorderColor, lineWidth: 1)
+            )
+            .shadow(color: cardShadowColor, radius: 4, x: 0, y: 2)
+    }
+
+    private var cardBackgroundColor: Color {
+        colorScheme == .dark ? Color(white: 0.08) : .white
+    }
+
+    private var cardBorderColor: Color {
+        if isPlaying {
+            return Color.blue.opacity(0.3)
+        } else if isCustom {
+            return Color.blue.opacity(0.2)
+        } else if colorScheme == .light {
+            return Color.black.opacity(0.1)
+        }
+        return .clear
+    }
+
+    private var cardShadowColor: Color {
+        colorScheme == .dark ? .clear : Color.black.opacity(0.05)
     }
 }
 
-// Extensions inchangées
+// Extensions
 extension View {
     func pressAction(onPress: @escaping (() -> Void), onRelease: @escaping (() -> Void)) -> some View {
         self.simultaneousGesture(
@@ -527,8 +707,10 @@ extension View {
     }
 }
 
-// Vues helpers (garder les versions précédentes ou simplifiées)
+// Vues helpers
 struct InitialLoadingView: View {
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
         VStack(spacing: 30) {
             Spacer()
@@ -541,12 +723,12 @@ struct InitialLoadingView: View {
 
             VStack(spacing: 12) {
                 ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .dark ? .white : .blue))
                     .scaleEffect(1.3)
 
                 Text("Chargement...")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
             }
 
             Spacer()
@@ -558,6 +740,7 @@ struct InitialLoadingView: View {
 struct ErrorView: View {
     let message: String
     let onRetry: () -> Void
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(spacing: 20) {
@@ -569,7 +752,7 @@ struct ErrorView: View {
 
             Text("Connexion impossible")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
 
             Text(message)
                 .font(.subheadline)
@@ -598,6 +781,7 @@ struct ErrorView: View {
 struct EmptyStateView: View {
     let category: StationsView.StationCategory
     let searchText: String
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(spacing: 20) {
@@ -609,7 +793,7 @@ struct EmptyStateView: View {
 
             Text(emptyTitle)
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
 
             Text(emptyMessage)
                 .font(.subheadline)

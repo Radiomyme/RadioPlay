@@ -485,14 +485,34 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
     }
 
     private func parseStreamTitle(_ streamTitle: String) {
-        let components = streamTitle.components(separatedBy: " - ")
+        // Nettoyer et valider le titre
+        let cleanTitle = streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Liste de titres invalides à ignorer
+        let invalidTitles = ["true", "false", "null", "unknown", "n/a", "-", ""]
+
+        // Vérifier si c'est un titre invalide
+        guard !invalidTitles.contains(cleanTitle.lowercased()) else {
+            // Ne pas mettre à jour currentTrack si le titre est invalide
+            return
+        }
+
+        let components = cleanTitle.components(separatedBy: " - ")
 
         if components.count >= 2 {
             let artist = components[0].trimmingCharacters(in: .whitespacesAndNewlines)
             let title = components[1].trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Vérifier que l'artiste et le titre ne sont pas vides ou invalides
+            guard !artist.isEmpty && !title.isEmpty &&
+                  !invalidTitles.contains(artist.lowercased()) &&
+                  !invalidTitles.contains(title.lowercased()) else {
+                return
+            }
+
             currentTrack = Track(title: title, artist: artist, album: nil)
-        } else {
-            currentTrack = Track(title: streamTitle, artist: "", album: nil)
+        } else if cleanTitle.count > 3 { // Au moins 3 caractères pour être valide
+            currentTrack = Track(title: cleanTitle, artist: "", album: nil)
         }
 
         // Mise à jour des infos du centre de contrôle

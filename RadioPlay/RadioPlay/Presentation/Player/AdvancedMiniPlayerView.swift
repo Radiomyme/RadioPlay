@@ -1,5 +1,5 @@
 //
-//  AdvancedMiniPlayerView.swift - Version finale avec transitions fluides
+//  AdvancedMiniPlayerView.swift - Version finale avec Liquid Glass
 //  RadioPlay
 //
 //  Created by Martin Parmentier on 24/05/2025.
@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AdvancedMiniPlayerView: View {
     @EnvironmentObject private var audioManager: AudioPlayerManager
+    @Environment(\.colorScheme) var colorScheme
     @State private var isExpanded = false
     @State private var dragOffset: CGFloat = 0
     @State private var isSleepTimerPresented = false
@@ -43,12 +44,12 @@ struct AdvancedMiniPlayerView: View {
                         removal: .scale(scale: 0.95).combined(with: .opacity)
                     ))
             } else {
-                // Mini player
+                // Mini player avec safe area
                 miniPlayerView()
+                    .padding(.bottom, safeAreaBottom)
                     .transition(.move(edge: .bottom))
             }
         }
-        .safeAreaPadding(.bottom, 12)
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: isExpanded)
         .sheet(isPresented: $isSleepTimerPresented) {
             SleepTimerView(
@@ -60,36 +61,47 @@ struct AdvancedMiniPlayerView: View {
         }
     }
 
+    // ✅ Calcul de la safe area bottom
+    private var safeAreaBottom: CGFloat {
+        let keyWindow = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }
+
+        return keyWindow?.safeAreaInsets.bottom ?? 0
+    }
+
     // MARK: - Mini Player View
 
     private func miniPlayerView() -> some View {
         HStack(spacing: 12) {
-            // Artwork avec animation
+            // Artwork avec animation - affiche le logo de la station si pas d'artwork
             ZStack {
                 if let artwork = audioManager.artwork {
                     Image(uiImage: artwork)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .frame(width: 56, height: 56)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                         .matchedGeometryEffect(id: "artwork", in: animationNamespace)
-                } else {
-                    AsyncImage(url: URL(string: audioManager.currentStation?.logoURL ?? "")) { phase in
+                } else if let logoURL = audioManager.currentStation?.logoURL {
+                    // Afficher le logo de la station si pas d'artwork de piste
+                    AsyncImage(url: URL(string: logoURL)) { phase in
                         switch phase {
                         case .empty:
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: 10)
                                 .fill(Color.gray.opacity(0.2))
-                                .frame(width: 48, height: 48)
+                                .frame(width: 56, height: 56)
                         case .success(let image):
                             image
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 48, height: 48)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 56, height: 56)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                         case .failure:
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: 10)
                                 .fill(Color.gray.opacity(0.2))
-                                .frame(width: 48, height: 48)
+                                .frame(width: 56, height: 56)
                                 .overlay(
                                     Image(systemName: "radio")
                                         .foregroundColor(.gray)
@@ -99,27 +111,37 @@ struct AdvancedMiniPlayerView: View {
                         }
                     }
                     .matchedGeometryEffect(id: "artwork", in: animationNamespace)
+                } else {
+                    // Placeholder par défaut
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: 56, height: 56)
+                        .overlay(
+                            Image(systemName: "radio")
+                                .foregroundColor(.gray)
+                        )
+                        .matchedGeometryEffect(id: "artwork", in: animationNamespace)
                 }
 
                 if audioManager.isBuffering {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .dark ? .white : .blue))
                         .scaleEffect(0.8)
-                        .frame(width: 48, height: 48)
+                        .frame(width: 56, height: 56)
                         .background(Color.black.opacity(0.5))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
 
-            // Infos avec animation
-            VStack(alignment: .leading, spacing: 3) {
-                Text(audioManager.currentTrack?.title ?? audioManager.currentStation?.name ?? "")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.white)
+            // Infos avec animation - affiche les infos de la station si pas de piste
+            VStack(alignment: .leading, spacing: 4) {
+                Text(displayTitle)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(miniPlayerTextColor)
                     .lineLimit(1)
                     .matchedGeometryEffect(id: "title", in: animationNamespace)
 
-                Text(audioManager.currentTrack?.artist ?? audioManager.currentStation?.subtitle ?? "")
+                Text(displaySubtitle)
                     .font(.system(size: 13))
                     .foregroundColor(.gray)
                     .lineLimit(1)
@@ -127,13 +149,13 @@ struct AdvancedMiniPlayerView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Visualiseur audio simple (remplace la barre de progression)
+            // Visualiseur audio simple
             if audioManager.isPlaying && !audioManager.isBuffering {
-                HStack(spacing: 2) {
+                HStack(spacing: 3) {
                     ForEach(0..<3, id: \.self) { index in
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.white.opacity(0.7))
-                            .frame(width: 3, height: CGFloat.random(in: 8...20))
+                            .fill(miniPlayerAccentColor)
+                            .frame(width: 3, height: CGFloat.random(in: 10...24))
                             .animation(
                                 .easeInOut(duration: 0.5)
                                 .repeatForever(autoreverses: true)
@@ -142,42 +164,138 @@ struct AdvancedMiniPlayerView: View {
                             )
                     }
                 }
-                .padding(.trailing, 8)
+                .padding(.trailing, 12)
             }
 
             // Contrôles
             Button(action: { audioManager.togglePlayPause() }) {
                 Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 22))
-                    .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
+                    .font(.system(size: 24))
+                    .foregroundColor(miniPlayerAccentColor)
+                    .frame(width: 48, height: 48)
                     .contentShape(Rectangle())
                     .matchedGeometryEffect(id: "playButton", in: animationNamespace)
             }
 
             Button(action: { audioManager.stop() }) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                     .foregroundColor(.gray)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 40, height: 40)
                     .contentShape(Rectangle())
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(red: 0.11, green: 0.11, blue: 0.11))
-                .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: -5)
-        )
-        .padding(.horizontal, 8)
-        .padding(.bottom, miniPlayerBottomPadding)
+        .padding(.vertical, 12)
+        .frame(height: 80)
+        .background(miniPlayerBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 12)
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.5 : 0.2), radius: 20, x: 0, y: -5)
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
                 isExpanded = true
             }
         }
+    }
+
+    // ✅ NOUVEAU - Propriétés calculées pour affichage intelligent
+    private var displayTitle: String {
+        if let track = audioManager.currentTrack, !track.title.isEmpty {
+            return track.title
+        }
+        return audioManager.currentStation?.name ?? "Radio"
+    }
+
+    private var displaySubtitle: String {
+        if let track = audioManager.currentTrack, !track.artist.isEmpty {
+            return track.artist
+        }
+        return audioManager.currentStation?.subtitle ?? "En direct"
+    }
+
+    // ✅ Effet Liquid Glass pour player flottant
+    @ViewBuilder
+    private var miniPlayerBackground: some View {
+        if colorScheme == .dark {
+            // Mode sombre - effet glass sombre
+            ZStack {
+                // Fond avec blur
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+
+                // Overlay avec gradient subtil
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.12),
+                                Color.white.opacity(0.04)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                // Bordure lumineuse
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.25),
+                                Color.white.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.5
+                    )
+            }
+        } else {
+            // Mode clair - effet glass lumineux
+            ZStack {
+                // Fond avec blur
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+
+                // Overlay avec gradient clair
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.95),
+                                Color.white.opacity(0.85)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                // Bordure subtile
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.9),
+                                Color.gray.opacity(0.3)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
+        }
+    }
+
+    // ✅ Couleurs adaptatives pour le mini-player
+    private var miniPlayerTextColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+
+    private var miniPlayerAccentColor: Color {
+        colorScheme == .dark ? .white : .blue
     }
 
     // MARK: - Expanded Player View
@@ -205,7 +323,7 @@ struct AdvancedMiniPlayerView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
 
-                    // Artwork avec animation
+                    // Artwork avec animation - Logo de la station si pas d'artwork
                     ZStack {
                         if let artwork = audioManager.artwork {
                             Image(uiImage: artwork)
@@ -215,8 +333,8 @@ struct AdvancedMiniPlayerView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .shadow(color: .black.opacity(0.5), radius: 30, x: 0, y: 15)
                                 .matchedGeometryEffect(id: "artwork", in: animationNamespace)
-                        } else {
-                            AsyncImage(url: URL(string: audioManager.currentStation?.logoURL ?? "")) { phase in
+                        } else if let logoURL = audioManager.currentStation?.logoURL {
+                            AsyncImage(url: URL(string: logoURL)) { phase in
                                 switch phase {
                                 case .empty:
                                     RoundedRectangle(cornerRadius: 20)
@@ -225,7 +343,7 @@ struct AdvancedMiniPlayerView: View {
                                 case .success(let image):
                                     image
                                         .resizable()
-                                        .aspectRatio(contentMode: .fill)
+                                        .aspectRatio(contentMode: .fit)
                                         .frame(width: 280, height: 280)
                                         .clipShape(RoundedRectangle(cornerRadius: 20))
                                         .shadow(color: .black.opacity(0.5), radius: 30, x: 0, y: 15)
@@ -243,6 +361,16 @@ struct AdvancedMiniPlayerView: View {
                                 }
                             }
                             .matchedGeometryEffect(id: "artwork", in: animationNamespace)
+                        } else {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(width: 280, height: 280)
+                                .overlay(
+                                    Image(systemName: "radio")
+                                        .font(.system(size: 70))
+                                        .foregroundColor(.gray)
+                                )
+                                .matchedGeometryEffect(id: "artwork", in: animationNamespace)
                         }
 
                         if audioManager.isBuffering {
@@ -263,7 +391,7 @@ struct AdvancedMiniPlayerView: View {
                     }
                     .padding(.bottom, 50)
 
-                    // Infos piste avec animation
+                    // Infos piste avec animation - Infos de la station si pas de piste
                     VStack(spacing: 12) {
                         if audioManager.isPlaying && !audioManager.isBuffering {
                             AudioVisualizerView(isPlaying: audioManager.isPlaying)
@@ -272,7 +400,7 @@ struct AdvancedMiniPlayerView: View {
                                 .padding(.bottom, 8)
                         }
 
-                        Text(audioManager.currentTrack?.title ?? "En direct")
+                        Text(displayTitle)
                             .font(.system(size: 26, weight: .bold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
@@ -280,7 +408,7 @@ struct AdvancedMiniPlayerView: View {
                             .padding(.horizontal, 40)
                             .matchedGeometryEffect(id: "title", in: animationNamespace)
 
-                        Text(audioManager.currentTrack?.artist ?? audioManager.currentStation?.subtitle ?? "")
+                        Text(displaySubtitle)
                             .font(.system(size: 18))
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.center)
@@ -338,30 +466,7 @@ struct AdvancedMiniPlayerView: View {
                 .frame(maxHeight: .infinity)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
-            .background(
-                ZStack {
-                    // Fond avec artwork flou
-                    if let artwork = audioManager.artwork {
-                        Image(uiImage: artwork)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .blur(radius: 60)
-                            .opacity(0.3)
-                    }
-
-                    // Gradient overlay
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0.3),
-                            Color.black.opacity(0.9)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-                .ignoresSafeArea()
-            )
+            .background(expandedPlayerBackground(geometry: geometry))
             .offset(y: dragOffset)
             .gesture(
                 DragGesture()
@@ -380,6 +485,45 @@ struct AdvancedMiniPlayerView: View {
                             dragOffset = 0
                         }
                     }
+            )
+        }
+        .ignoresSafeArea()
+    }
+
+    // ✅ Fond du player étendu avec logo de la station en arrière-plan
+    @ViewBuilder
+    private func expandedPlayerBackground(geometry: GeometryProxy) -> some View {
+        ZStack {
+            // Fond avec artwork/logo flou
+            if let artwork = audioManager.artwork {
+                Image(uiImage: artwork)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .blur(radius: 60)
+                    .opacity(0.3)
+            } else if let logoURL = audioManager.currentStation?.logoURL {
+                // Utiliser le logo de la station en arrière-plan
+                AsyncImage(url: URL(string: logoURL)) { phase in
+                    if case .success(let image) = phase {
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .blur(radius: 80)
+                            .opacity(0.2)
+                    }
+                }
+            }
+
+            // Gradient overlay
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.3),
+                    Color.black.opacity(0.9)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
         }
         .ignoresSafeArea()
@@ -467,4 +611,3 @@ struct AdvancedMiniPlayerView: View {
         sleepTimerService.stopTimer()
     }
 }
-

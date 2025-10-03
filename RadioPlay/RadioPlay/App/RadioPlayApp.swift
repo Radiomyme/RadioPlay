@@ -6,11 +6,12 @@ import MediaPlayer
 @main
 struct RadioPlayApp: SwiftUI.App {
     @StateObject private var audioManager = AudioPlayerManager.shared
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
         print("🚀 App init started")
 
-        // ✅ AJOUT - Enregistrer le transformer AVANT toute utilisation de CoreData
+        // ✅ Enregistrer le transformer AVANT toute utilisation de CoreData
         StringArrayTransformer.register()
 
         setupAudioSessionAsync()
@@ -26,7 +27,7 @@ struct RadioPlayApp: SwiftUI.App {
                 MainView()
                     .environment(\.managedObjectContext, persistenceController.persistentContainer.viewContext)
                     .environmentObject(audioManager)
-                    .preferredColorScheme(.dark)
+                    // ✅ SUPPRIMÉ .preferredColorScheme(.dark) pour laisser ThemeManager gérer
 
                 VStack {
                     Spacer()

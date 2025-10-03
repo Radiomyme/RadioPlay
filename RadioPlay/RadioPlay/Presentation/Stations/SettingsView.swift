@@ -1,10 +1,3 @@
-//
-//  SettingsView.swift
-//  RadioPlay
-//
-//  Created by Martin Parmentier on 17/05/2025.
-//
-
 import SwiftUI
 
 struct SettingsView: View {
@@ -14,6 +7,12 @@ struct SettingsView: View {
     // Observer le ThemeManager
     @ObservedObject private var themeManager = ThemeManager.shared
 
+    // États pour les fonctionnalités
+    @AppStorage("streamQuality") private var streamQuality: StreamQuality = .high
+    @AppStorage("allowCellularData") private var allowCellularData = false
+    @State private var showCellularAlert = false
+    @State private var showQualityPicker = false
+
     // Pour les animations
     @State private var appearAnimation = false
 
@@ -21,7 +20,19 @@ struct SettingsView: View {
     private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     private let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
 
-    @State private var showCellularAlert = false
+    enum StreamQuality: String, CaseIterable {
+        case low = "Basse"
+        case medium = "Moyenne"
+        case high = "Haute"
+
+        var bitrate: String {
+            switch self {
+            case .low: return "64 kbps"
+            case .medium: return "128 kbps"
+            case .high: return "256 kbps"
+            }
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -64,7 +75,7 @@ struct SettingsView: View {
                         GroupBox {
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {
-                                    Image("default_artwork") // Logo de l'app
+                                    Image("default_artwork")
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
                                         .frame(width: 60, height: 60)
@@ -91,17 +102,23 @@ struct SettingsView: View {
                                 .font(.headline)
                         }
 
-                        // Options de thème - Utilisant ThemeManager
+                        // Options de thème - Fonctionnel
                         GroupBox {
                             VStack(spacing: 16) {
-                                Toggle("Mode sombre", isOn: $themeManager.isDarkMode)
-                                    .toggleStyle(SwitchToggleStyle(tint: .blue))
+                                Toggle("Mode sombre", isOn: Binding(
+                                    get: { themeManager.isDarkMode },
+                                    set: { newValue in
+                                        themeManager.setDarkMode(newValue)
+                                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                    }
+                                ))
+                                .toggleStyle(SwitchToggleStyle(tint: .blue))
 
                                 Divider()
 
                                 Button(action: {
-                                    // Utiliser le thème système via ThemeManager
-                                    themeManager.useSystemTheme()
+                                    themeManager.enableSystemTheme()
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                                 }) {
                                     Text("Utiliser le thème système")
                                         .frame(maxWidth: .infinity)
@@ -116,52 +133,65 @@ struct SettingsView: View {
                                 .font(.headline)
                         }
 
-                        // Paramètres audio
+                        // Paramètres audio - Fonctionnel
                         GroupBox {
                             VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    Text("Qualité de streaming")
-                                    Spacer()
-                                    Picker("", selection: .constant("Haute")) {
-                                        Text("Haute").tag("Haute")
-                                        Text("Moyenne").tag("Moyenne")
-                                        Text("Basse").tag("Basse")
+                                // Qualité de streaming
+                                Button(action: {
+                                    showQualityPicker = true
+                                }) {
+                                    HStack {
+                                        Text("Qualité de streaming")
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        Text("\(streamQuality.rawValue)")
+                                            .foregroundColor(.blue)
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 14))
                                     }
-                                    .pickerStyle(MenuPickerStyle())
-                                    .accentColor(.blue)
                                 }
 
                                 Divider()
 
-                                Button(action: {
-                                    // Demander avant d'utiliser les données cellulaires
-                                    showCellularAlert = true
-                                }) {
-                                    HStack {
-                                        Text("Autoriser la 4G/5G")
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.gray)
+                                // Données cellulaires
+                                Toggle("Autoriser la 4G/5G", isOn: $allowCellularData)
+                                    .toggleStyle(SwitchToggleStyle(tint: .blue))
+                                    .onChange(of: allowCellularData) { newValue in
+                                        if newValue {
+                                            showCellularAlert = true
+                                        }
+                                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                     }
-                                }
-                                .foregroundColor(.primary)
                             }
                         } label: {
                             Label("Audio", systemImage: "speaker.wave.3")
                                 .font(.headline)
                         }
-                        .alert(isPresented: $showCellularAlert) {
-                            Alert(
-                                title: Text("Utiliser les données cellulaires ?"),
-                                message: Text("Voulez-vous autoriser l'utilisation des données cellulaires (4G/5G) pour le streaming ? Cela peut augmenter votre consommation de données."),
-                                primaryButton: .default(Text("Autoriser")) {
-                                    // Logique pour autoriser les données cellulaires
-                                },
-                                secondaryButton: .cancel(Text("Wi-Fi uniquement"))
+                        .alert("Utiliser les données cellulaires ?", isPresented: $showCellularAlert) {
+                            Button("Autoriser", role: .none) {
+                                allowCellularData = true
+                            }
+                            Button("Wi-Fi uniquement", role: .cancel) {
+                                allowCellularData = false
+                            }
+                        } message: {
+                            Text("L'utilisation des données cellulaires (4G/5G) pour le streaming peut augmenter votre consommation de données.")
+                        }
+                        .actionSheet(isPresented: $showQualityPicker) {
+                            ActionSheet(
+                                title: Text("Qualité de streaming"),
+                                message: Text("Choisissez la qualité audio"),
+                                buttons: StreamQuality.allCases.map { quality in
+                                    .default(Text("\(quality.rawValue) (\(quality.bitrate))")) {
+                                        streamQuality = quality
+                                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    }
+                                } + [.cancel(Text("Annuler"))]
                             )
                         }
 
-                        // Crédits
+                        // Crédits et liens - Fonctionnels
                         GroupBox {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Développé par Martin Parmentier")
@@ -175,24 +205,25 @@ struct SettingsView: View {
 
                                 Divider()
 
-                                Button(action: {
-                                    // Ouvrir les conditions d'utilisation
-                                    if let url = URL(string: "https://example.com/terms") {
-                                        UIApplication.shared.open(url)
+                                // Liens fonctionnels
+                                Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
+                                    HStack {
+                                        Text("Conditions d'utilisation")
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right")
+                                            .font(.caption)
                                     }
-                                }) {
-                                    Text("Conditions d'utilisation")
-                                        .foregroundColor(.blue)
+                                    .foregroundColor(.blue)
                                 }
 
-                                Button(action: {
-                                    // Ouvrir la politique de confidentialité
-                                    if let url = URL(string: "https://example.com/privacy") {
-                                        UIApplication.shared.open(url)
+                                Link(destination: URL(string: "https://www.apple.com/legal/privacy/")!) {
+                                    HStack {
+                                        Text("Politique de confidentialité")
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right")
+                                            .font(.caption)
                                     }
-                                }) {
-                                    Text("Politique de confidentialité")
-                                        .foregroundColor(.blue)
+                                    .foregroundColor(.blue)
                                 }
                             }
                         } label: {
@@ -204,18 +235,10 @@ struct SettingsView: View {
                     .padding(.vertical, 12)
                 }
 
-                // Actions en bas
+                // Actions en bas - Fonctionnelles
                 VStack(spacing: 12) {
-                    Button(action: {
-                        // Partager l'application avec méthode moderne pour trouver le rootViewController
-                        let activityVC = UIActivityViewController(activityItems: ["Découvrez Radio Play, l'application idéale pour écouter vos radios préférées ! https://apps.apple.com/app/radioplay"], applicationActivities: nil)
-
-                        // Utiliser la méthode moderne pour iOS 15+ pour trouver le rootViewController
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let rootVC = windowScene.windows.first?.rootViewController {
-                            rootVC.present(activityVC, animated: true)
-                        }
-                    }) {
+                    // Partager l'application
+                    Button(action: shareApp) {
                         HStack {
                             Image(systemName: "square.and.arrow.up")
                             Text("Partager Radio Play")
@@ -227,12 +250,8 @@ struct SettingsView: View {
                         .cornerRadius(10)
                     }
 
-                    Button(action: {
-                        // Noter l'application
-                        if let url = URL(string: "https://apps.apple.com/app/id") {
-                            UIApplication.shared.open(url)
-                        }
-                    }) {
+                    // Noter l'application
+                    Button(action: rateApp) {
                         HStack {
                             Image(systemName: "star.fill")
                             Text("Noter l'application")
@@ -269,6 +288,8 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Fonctions
+
     private func dismissWithAnimation() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             appearAnimation = false
@@ -277,6 +298,53 @@ struct SettingsView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             isPresented = false
         }
+    }
+
+    private func shareApp() {
+        let shareText = "Découvrez Radio Play, l'application idéale pour écouter vos radios préférées ! 📻"
+        let shareURL = URL(string: "https://apps.apple.com/app/radioplay")
+
+        var items: [Any] = [shareText]
+        if let url = shareURL {
+            items.append(url)
+        }
+
+        let activityVC = UIActivityViewController(
+            activityItems: items,
+            applicationActivities: nil
+        )
+
+        // Exclure certains types de partage
+        activityVC.excludedActivityTypes = [
+            .addToReadingList,
+            .assignToContact,
+            .saveToCameraRoll
+        ]
+
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            // Pour iPad
+            if let popover = activityVC.popoverPresentationController {
+                popover.sourceView = rootVC.view
+                popover.sourceRect = CGRect(x: rootVC.view.bounds.midX, y: rootVC.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            rootVC.present(activityVC, animated: true)
+        }
+
+        // Feedback haptique
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+
+    private func rateApp() {
+        // URL pour noter l'app sur l'App Store
+        // Remplacer APP_ID par votre vrai App Store ID
+        if let url = URL(string: "https://apps.apple.com/app/idAPP_ID?action=write-review") {
+            UIApplication.shared.open(url)
+        }
+
+        // Feedback haptique
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 }
 
