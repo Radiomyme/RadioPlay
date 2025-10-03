@@ -1,11 +1,3 @@
-//
-//  StationsRepository.swift
-//  RadioPlay
-//
-//  Created by Martin Parmentier on 17/05/2025.
-//
-
-
 import Foundation
 import CoreData
 
@@ -13,64 +5,86 @@ class StationsRepository {
     private let remoteConfigService = RemoteConfigService()
     private let coreDataManager = CoreDataManager.shared
 
-    // Charger les stations (d'abord localement, puis tenter de mettre à jour depuis le réseau)
     func loadStations() async throws -> [Station] {
         let localStations = fetchLocalStations()
 
-        // Essayer d'abord de charger à partir du JSON local
         if localStations.isEmpty {
             do {
-                // Si le bundle contient le fichier JSON, l'utiliser d'abord
                 if let stations = loadStationsFromLocalJSON() {
-                    // Sauvegarder dans CoreData
                     await saveStationsLocally(stations)
                     return stations
                 }
             } catch {
-                print("Erreur lors du chargement du JSON local: \(error)")
-                // Continuer pour essayer de charger depuis le réseau
+                print("⚠️ Erreur lors du chargement du JSON local: \(error)")
             }
         }
 
         do {
-            // Tenter de récupérer les stations à distance
             let remoteStations = try await remoteConfigService.fetchStations()
-
-            // Si on a réussi, mettre à jour le stockage local
             await saveStationsLocally(remoteStations)
             return remoteStations
         } catch {
             Logger.log("Failed to fetch remote stations: \(error)", category: .network, type: .error)
 
-            // Si nous n'avons pas de stations locales non plus, remonter l'erreur
             if localStations.isEmpty {
                 throw error
             }
 
-            // Renvoyer les stations locales si la récupération à distance échoue
             return localStations
         }
     }
 
-    // Nouvelle méthode pour charger les stations depuis le JSON local
     private func loadStationsFromLocalJSON() -> [Station]? {
         guard let path = Bundle.main.path(forResource: "RadioStations+Categories", ofType: "json") else {
-            print("RadioStations+Categories.json introuvable dans le bundle")
-            return nil
+            print("⚠️ RadioStations+Categories.json introuvable dans le bundle")
+            return createDefaultStations()
         }
 
         do {
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let stations = try JSONDecoder().decode([Station].self, from: data)
-            print("Chargement de \(stations.count) stations depuis le JSON local")
+            print("✅ Chargement de \(stations.count) stations depuis le JSON local")
             return stations
         } catch {
-            print("Erreur lors du décodage du JSON: \(error)")
-            return nil
+            print("❌ Erreur lors du décodage du JSON: \(error)")
+            return createDefaultStations()
         }
     }
 
-    // Récupérer les stations stockées localement
+    // ✅ NOUVEAU - Stations par défaut
+    private func createDefaultStations() -> [Station] {
+        print("📻 Création de stations par défaut")
+        return [
+            Station(
+                id: "1",
+                name: "RTL",
+                subtitle: "RTL bouge",
+                streamURL: "https://streaming.radio.rtl.fr/rtl-1-44-96",
+                imageURL: "https://cdn-media.rtl.fr/cache/LlH3G2yGy3FcB8JSqtN02g/1800x1200-0/online/image/rtl.jpg",
+                logoURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/RTL_logo.svg/1200px-RTL_logo.svg.png",
+                categories: ["Actualités", "Généraliste"]
+            ),
+            Station(
+                id: "2",
+                name: "France Info",
+                subtitle: "Actualités en temps réel",
+                streamURL: "https://icecast.radiofrance.fr/franceinfo-midfi.mp3",
+                imageURL: "https://cdn-media.rtl.fr/online/image/2015/0623/7778732219_franceinfo-logo.jpg",
+                logoURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Franceinfo.svg/1200px-Franceinfo.svg.png",
+                categories: ["Actualités", "Information"]
+            ),
+            Station(
+                id: "3",
+                name: "NRJ",
+                subtitle: "Hit Music Only",
+                streamURL: "https://scdn.nrjaudio.fm/audio1/fr/30001/mp3_128.mp3",
+                imageURL: "https://cdn.nrjaudio.fm/adimg/6779/3535779/1900x1080_NRJ-Supernova_1.jpg",
+                logoURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/NRJ_logo_2019.svg/1200px-NRJ_logo_2019.svg.png",
+                categories: ["Musique", "Pop"]
+            )
+        ]
+    }
+
     private func fetchLocalStations() -> [Station] {
         let context = coreDataManager.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<StationEntity> = StationEntity.fetchRequest()
@@ -85,18 +99,16 @@ class StationsRepository {
                     streamURL: entity.streamURL ?? "",
                     imageURL: entity.imageURL,
                     logoURL: entity.logoURL,
-                    categories: entity.categories as? [String]
+                    categories: entity.categories as? [String]  // ✅ Cast sécurisé
                 )
             }
         } catch {
-            print("Failed to fetch local stations: \(error)")
+            print("❌ Failed to fetch local stations: \(error)")
             return []
         }
     }
 
-    // Sauvegarder les stations localement
     private func saveStationsLocally(_ stations: [Station]) async {
-        // S'exécuter sur un thread d'arrière-plan pour éviter de bloquer l'UI
         await MainActor.run {
             let context = coreDataManager.persistentContainer.viewContext
 
@@ -116,12 +128,17 @@ class StationsRepository {
                     entity.streamURL = station.streamURL
                     entity.imageURL = station.imageURL
                     entity.logoURL = station.logoURL
-                    entity.categories = station.categories as NSArray?
+
+                    // ✅ MODIFIÉ - Utiliser le transformer personnalisé
+                    if let categories = station.categories {
+                        entity.categories = categories as! [String]
+                    }
                 }
 
                 coreDataManager.saveContext()
+                print("✅ Saved \(stations.count) stations locally")
             } catch {
-                print("Failed to save stations locally: \(error)")
+                print("❌ Failed to save stations locally: \(error)")
             }
         }
     }

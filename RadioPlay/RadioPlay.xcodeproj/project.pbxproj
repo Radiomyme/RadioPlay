@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		36976B6B2E90284A003B6679 /* LaunchScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36976B6A2E90284A003B6679 /* LaunchScreenView.swift */; };
 		36A628C62DD88DAF001323D2 /* RadioPlay.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 36A628C42DD88DAF001323D2 /* RadioPlay.xcdatamodeld */; };
-		36A6294B2DD8D917001323D2 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 36A6294A2DD8D917001323D2 /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,12 +29,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		36976B6A2E90284A003B6679 /* LaunchScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchScreenView.swift; sourceTree = "<group>"; };
 		36A6286F2DD88911001323D2 /* RadioPlay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RadioPlay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A6287C2DD88912001323D2 /* RadioPlayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RadioPlayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A628862DD88912001323D2 /* RadioPlayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RadioPlayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A628C52DD88DAF001323D2 /* RadioPlay.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = RadioPlay.xcdatamodel; sourceTree = "<group>"; };
 		36A628E72DD8A3C7001323D2 /* info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = info.plist; sourceTree = "<group>"; };
-		36A6294A2DD8D917001323D2 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -96,13 +96,13 @@
 		36A628662DD88911001323D2 = {
 			isa = PBXGroup;
 			children = (
-				36A6294A2DD8D917001323D2 /* LaunchScreen.storyboard */,
 				36A628E72DD8A3C7001323D2 /* info.plist */,
 				36A628C42DD88DAF001323D2 /* RadioPlay.xcdatamodeld */,
 				36A628712DD88911001323D2 /* RadioPlay */,
 				36A6287F2DD88912001323D2 /* RadioPlayTests */,
 				36A628892DD88912001323D2 /* RadioPlayUITests */,
 				36A628702DD88911001323D2 /* Products */,
+				36976B6A2E90284A003B6679 /* LaunchScreenView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -236,7 +236,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				36A6294B2DD8D917001323D2 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,6 +261,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				36A628C62DD88DAF001323D2 /* RadioPlay.xcdatamodeld in Sources */,
+				36976B6B2E90284A003B6679 /* LaunchScreenView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

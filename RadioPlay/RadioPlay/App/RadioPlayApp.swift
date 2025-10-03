@@ -1,10 +1,3 @@
-//
-//  RadioPlayApp.swift modifié
-//  RadioPlay
-//
-//  Created by Martin Parmentier on 17/05/2025.
-//
-
 import SwiftUI
 import AVFoundation
 import CoreData
@@ -15,13 +8,14 @@ struct RadioPlayApp: SwiftUI.App {
     @StateObject private var audioManager = AudioPlayerManager.shared
 
     init() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.allowAirPlay, .allowBluetooth])
-            try AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
-            setupRemoteCommands()
-        } catch {
-            print("Échec de la configuration de la session audio: \(error)")
-        }
+        print("🚀 App init started")
+
+        // ✅ AJOUT - Enregistrer le transformer AVANT toute utilisation de CoreData
+        StringArrayTransformer.register()
+
+        setupAudioSessionAsync()
+        setupRemoteCommands()
+        print("🚀 App init completed")
     }
 
     let persistenceController = CoreDataManager.shared
@@ -34,7 +28,6 @@ struct RadioPlayApp: SwiftUI.App {
                     .environmentObject(audioManager)
                     .preferredColorScheme(.dark)
 
-                // Mini player fixé en bas
                 VStack {
                     Spacer()
                     if audioManager.currentStation != nil {
@@ -49,10 +42,23 @@ struct RadioPlayApp: SwiftUI.App {
         }
     }
 
+    private func setupAudioSessionAsync() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.allowAirPlay, .allowBluetooth])
+                try AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
+                print("✅ Audio session configured")
+            } catch {
+                print("❌ Audio session error: \(error)")
+            }
+        }
+    }
+
     private func setupRemoteCommands() {
         let commandCenter = MPRemoteCommandCenter.shared()
         commandCenter.playCommand.isEnabled = true
         commandCenter.pauseCommand.isEnabled = true
         commandCenter.togglePlayPauseCommand.isEnabled = true
+        print("✅ Remote commands setup")
     }
 }
