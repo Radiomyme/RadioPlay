@@ -2,17 +2,7 @@
 //  AudioPlayerService.swift
 //  RadioPlay
 //
-//  Created by Martin Parmentier on 17/05/2025.
-//
-
-//
-//  AudioPlayerService corrigé (erreur Optional)
-//  RadioPlay
-//
-
-//
-//  AudioPlayerService (version sans binding)
-//  RadioPlay
+//  Created by Martin Parmentier.
 //
 
 import Foundation
@@ -97,15 +87,22 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
         do {
             let audioSession = AVAudioSession.sharedInstance()
 
-            // Définir la catégorie AVAudioSession
+            // ✅ Configuration optimale pour streaming sans coupures
+            // La policy .longFormAudio n'accepte AUCUNE option, donc on utilise .default
             try audioSession.setCategory(
                 .playback,
                 mode: .default,
                 options: [.allowAirPlay, .allowBluetooth, .mixWithOthers]
             )
 
-            // Définir la priorité audio élevée
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            // ✅ Buffer optimal pour streaming
+            try audioSession.setPreferredIOBufferDuration(0.005) // 5ms - réduit la latence
+
+            // ✅ Préférences pour la qualité audio
+            try audioSession.setPreferredSampleRate(44100.0)
+
+            // Activer la session avec priorité élevée
+            try audioSession.setActive(true, options: [.notifyOthersOnDeactivation])
             isAudioSessionActive = true
 
             print("✅ Session audio configurée avec succès")
@@ -208,8 +205,6 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
             player?.pause()
             isAudioSessionActive = false
 
-            // On conserve isPlaying à true pour savoir qu'il faudra reprendre
-
         case .ended:
             print("🔈 Interruption audio terminée")
             if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt,
@@ -267,7 +262,10 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
 
     func play(station: Station) {
         let streamURL = station.streamURL
-        let url = URL(string: streamURL)!
+        guard let url = URL(string: streamURL) else {
+            print("❌ URL invalide: \(streamURL)")
+            return
+        }
 
         // Stocker la station en cours pour pouvoir reprendre si nécessaire
         currentStation = station
@@ -286,70 +284,114 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
         print("⏳ Préparation de la lecture pour: \(station.name)")
         isBuffering = true
 
-        // Créer un AVAsset avec des options réseau optimisées
+        // ✅ Créer un AVAsset avec options réseau optimisées pour réduire les coupures
         let asset = AVURLAsset(url: url, options: [
-            "AVURLAssetHTTPHeaderFieldsKey": ["User-Agent": "RadioPlay/1.0"]
+            "AVURLAssetHTTPHeaderFieldsKey": [
+                "User-Agent": "RadioPlay/1.0",
+                "Icy-MetaData": "1"
+            ],
+            AVURLAssetPreferPreciseDurationAndTimingKey: false,
+            AVURLAssetHTTPCookiesKey: [] as [HTTPCookie]
         ])
 
-        playerItem = AVPlayerItem(asset: asset)
+        // ✅ Utiliser l'API moderne pour iOS 15+
+        Task {
+            do {
+                // Charger l'asset de manière asynchrone (iOS 15+)
+                let isPlayable = try await asset.load(.isPlayable)
 
-        // Observer l'état de préparation de l'item
-        statusObserver = playerItem?.observe(\.status, options: [.new]) { [weak self] item, _ in
-            guard let self = self else { return }
-
-            switch item.status {
-            case .readyToPlay:
-                print("✅ Flux prêt à être lu")
-                self.isBuffering = false
-
-                // Démarrer la lecture si nécessaire
-                if self.isPlaying && self.player?.rate == 0 {
-                    self.player?.play()
+                guard isPlayable else {
+                    await MainActor.run {
+                        print("❌ Asset non jouable")
+                        self.isBuffering = false
+                    }
+                    return
                 }
 
-            case .failed:
-                print("❌ Échec de préparation du flux: \(String(describing: item.error))")
-                self.isBuffering = false
+                await MainActor.run {
+                    // Créer le playerItem
+                    self.playerItem = AVPlayerItem(asset: asset)
 
-                // Tentative de récupération si possible
-                if self.isPlaying {
-                    self.needsRestart = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        if self.needsRestart, let station = self.currentStation {
-                            print("🔄 Tentative de reprise après échec")
-                            self.play(station: station)
+                    // ✅ Configuration optimale du buffer
+                    self.playerItem?.preferredForwardBufferDuration = 15.0 // 15 secondes de buffer
+                    self.playerItem?.canUseNetworkResourcesForLiveStreamingWhilePaused = true
+
+                    // Observer l'état de préparation de l'item
+                    self.statusObserver = self.playerItem?.observe(\.status, options: [.new]) { [weak self] item, _ in
+                        guard let self = self else { return }
+
+                        switch item.status {
+                        case .readyToPlay:
+                            print("✅ Flux prêt à être lu")
+                            self.isBuffering = false
+
+                            // Démarrer la lecture si nécessaire
+                            if self.isPlaying && self.player?.rate == 0 {
+                                self.player?.play()
+                            }
+
+                        case .failed:
+                            print("❌ Échec de préparation du flux: \(String(describing: item.error))")
+                            self.isBuffering = false
+
+                            // Tentative de récupération
+                            if self.isPlaying {
+                                self.needsRestart = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                                    if self.needsRestart, let station = self.currentStation {
+                                        print("🔄 Tentative de reprise après échec")
+                                        self.needsRestart = false
+                                        self.play(station: station)
+                                    }
+                                }
+                            }
+
+                        case .unknown:
+                            break
+
+                        @unknown default:
+                            break
                         }
                     }
+
+                    // Créer le player avec configuration optimisée
+                    self.player = AVPlayer(playerItem: self.playerItem)
+
+                    // ✅ Configuration optimale pour le streaming en continu
+                    self.player?.automaticallyWaitsToMinimizeStalling = true
+                    self.player?.volume = 1.0
+
+                    // ✅ Configuration pour iOS 16+
+                    if #available(iOS 16.0, *) {
+                        self.player?.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
+                        self.player?.preventsDisplaySleepDuringVideoPlayback = false
+                    }
+
+                    // ✅ Activer l'option de lecture en arrière-plan
+                    self.player?.allowsExternalPlayback = true
+
+                    // Configurer les observateurs
+                    self.setupMetadataObservers()
+                    self.setupPlaybackObserver()
+                    self.setupBufferObservers()
+
+                    // Démarrer la lecture après un court délai
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.player?.play()
+                        self.isPlaying = true
+                        print("▶️ Lecture démarrée: \(station.name)")
+
+                        // Initialiser les métadonnées par défaut
+                        self.currentTrack = Track(title: station.subtitle, artist: station.name, album: nil)
+                        self.updateNowPlayingInfo()
+                    }
                 }
-
-            case .unknown:
-                break
-
-            @unknown default:
-                break
+            } catch {
+                await MainActor.run {
+                    print("❌ Erreur lors du chargement de l'asset: \(error)")
+                    self.isBuffering = false
+                }
             }
-        }
-
-        // Créer le player avec un comportement optimisé pour le streaming
-        player = AVPlayer(playerItem: playerItem)
-        player?.automaticallyWaitsToMinimizeStalling = false
-        player?.volume = 1.0
-
-        // Configurer les observateurs pour les métadonnées
-        setupMetadataObservers()
-
-        // Configurer l'observateur de lecture
-        setupPlaybackObserver()
-
-        // Démarrer la lecture avec un léger délai pour assurer la stabilité
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            self.player?.play()
-            self.isPlaying = true
-            print("▶️ Lecture démarrée: \(station.name)")
-
-            // Initialiser les métadonnées par défaut
-            self.currentTrack = Track(title: station.subtitle, artist: station.name, album: nil)
-            self.updateNowPlayingInfo()
         }
     }
 
@@ -393,6 +435,13 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
     func stop() {
         print("⏹ Arrêt de la lecture")
 
+        // Nettoyage des observateurs KVO
+        if let item = playerItem {
+            item.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
+            item.removeObserver(self, forKeyPath: "playbackBufferEmpty")
+            item.removeObserver(self, forKeyPath: "playbackBufferFull")
+        }
+
         // Nettoyage des observateurs
         statusObserver?.invalidate()
         statusObserver = nil
@@ -412,7 +461,6 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
         isPlaying = false
         isBuffering = false
         needsRestart = false
-        // Ne pas réinitialiser currentStation pour permettre la reprise
 
         // Nettoyage des infos de lecture
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
@@ -432,9 +480,9 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
             self.timeObserverToken = nil
         }
 
-        // Ajouter un nouvel observateur périodique
+        // ✅ Réduire la fréquence de vérification pour économiser les ressources
         timeObserverToken = player?.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 1.0, preferredTimescale: CMTimeScale(NSEC_PER_SEC)),
+            forInterval: CMTime(seconds: 2.0, preferredTimescale: CMTimeScale(NSEC_PER_SEC)),
             queue: .main
         ) { [weak self] _ in
             guard let self = self else { return }
@@ -453,6 +501,72 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
                     self.setupAudioSession()
                 }
             }
+        }
+
+        // ✅ NOUVEAU - Observer les événements de stalling
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePlaybackStalled),
+            name: .AVPlayerItemPlaybackStalled,
+            object: playerItem
+        )
+    }
+
+    // ✅ NOUVEAU - Gérer les événements de buffering
+    @objc private func handlePlaybackStalled(notification: Notification) {
+        print("⚠️ Buffering détecté...")
+        isBuffering = true
+
+        // Attendre un peu puis reprendre
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
+
+            if self.isPlaying && self.player?.timeControlStatus != .playing {
+                print("🔄 Reprise après buffering")
+                self.player?.play()
+            }
+
+            self.isBuffering = false
+        }
+    }
+
+    // ✅ NOUVEAU - Observer l'état du buffer
+    private func setupBufferObservers() {
+        guard let playerItem = playerItem else { return }
+
+        // Observer l'état du buffer
+        playerItem.addObserver(self, forKeyPath: "playbackLikelyToKeepUp", options: [.new], context: nil)
+        playerItem.addObserver(self, forKeyPath: "playbackBufferEmpty", options: [.new], context: nil)
+        playerItem.addObserver(self, forKeyPath: "playbackBufferFull", options: [.new], context: nil)
+    }
+
+    // ✅ Observer les changements du buffer
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        guard let item = object as? AVPlayerItem else { return }
+
+        switch keyPath {
+        case "playbackLikelyToKeepUp":
+            if item.isPlaybackLikelyToKeepUp {
+                print("✅ Buffer suffisant pour lecture continue")
+                isBuffering = false
+                if isPlaying && player?.rate == 0 {
+                    player?.play()
+                }
+            }
+
+        case "playbackBufferEmpty":
+            if item.isPlaybackBufferEmpty {
+                print("⚠️ Buffer vide - buffering en cours")
+                isBuffering = true
+            }
+
+        case "playbackBufferFull":
+            if item.isPlaybackBufferFull {
+                print("✅ Buffer plein")
+            }
+
+        default:
+            break
         }
     }
 
@@ -486,22 +600,48 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
 
     private func parseStreamTitle(_ streamTitle: String) {
         // Nettoyer et valider le titre
-        let cleanTitle = streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        var cleanTitle = streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // ✅ Nettoyer les caractères parasites (§, numéros, etc.)
+        if let sectionIndex = cleanTitle.firstIndex(of: "§") {
+            cleanTitle = String(cleanTitle[..<sectionIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // Supprimer les séquences de chiffres de plus de 5 caractères consécutifs
+        cleanTitle = cleanTitle.replacingOccurrences(
+            of: "\\s*\\d{6,}\\s*",
+            with: " ",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Nettoyer les espaces multiples
+        cleanTitle = cleanTitle.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
 
         // Liste de titres invalides à ignorer
         let invalidTitles = ["true", "false", "null", "unknown", "n/a", "-", ""]
 
         // Vérifier si c'est un titre invalide
         guard !invalidTitles.contains(cleanTitle.lowercased()) else {
-            // Ne pas mettre à jour currentTrack si le titre est invalide
             return
         }
 
         let components = cleanTitle.components(separatedBy: " - ")
 
         if components.count >= 2 {
-            let artist = components[0].trimmingCharacters(in: .whitespacesAndNewlines)
-            let title = components[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            var artist = components[0].trimmingCharacters(in: .whitespacesAndNewlines)
+            var title = components[1].trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // ✅ Nettoyer aussi l'artiste et le titre individuellement
+            if let sectionIndex = artist.firstIndex(of: "§") {
+                artist = String(artist[..<sectionIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            if let sectionIndex = title.firstIndex(of: "§") {
+                title = String(title[..<sectionIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
 
             // Vérifier que l'artiste et le titre ne sont pas vides ou invalides
             guard !artist.isEmpty && !title.isEmpty &&
@@ -511,7 +651,7 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
             }
 
             currentTrack = Track(title: title, artist: artist, album: nil)
-        } else if cleanTitle.count > 3 { // Au moins 3 caractères pour être valide
+        } else if cleanTitle.count > 3 {
             currentTrack = Track(title: cleanTitle, artist: "", album: nil)
         }
 
@@ -581,49 +721,152 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
     }
 
     private func updateNowPlayingInfo() {
-        guard let track = currentTrack else { return }
+        guard let station = currentStation else { return }
 
         var nowPlayingInfo = [String: Any]()
-        nowPlayingInfo[MPMediaItemPropertyTitle] = track.title
-        nowPlayingInfo[MPMediaItemPropertyArtist] = track.artist
 
-        if let album = track.album {
-            nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = album
+        // ✅ Titre et artiste
+        if let track = currentTrack, !track.title.isEmpty {
+            nowPlayingInfo[MPMediaItemPropertyTitle] = track.title
+            nowPlayingInfo[MPMediaItemPropertyArtist] = track.artist.isEmpty ? station.name : track.artist
+            nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = station.subtitle
+        } else {
+            nowPlayingInfo[MPMediaItemPropertyTitle] = station.name
+            nowPlayingInfo[MPMediaItemPropertyArtist] = station.subtitle
         }
 
-        // Ajouter des informations de contrôle
-        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        // ✅ Type de contenu - Live Stream
         nowPlayingInfo[MPNowPlayingInfoPropertyIsLiveStream] = true
 
-        // Ajouter l'artwork si disponible
-        if let station = currentStation,
-           let logoURLString = station.logoURL,
-           !logoURLString.isEmpty,
-           let logoURL = URL(string: logoURLString) {
-            DispatchQueue.global(qos: .utility).async {
-                do {
-                    let imageData = try Data(contentsOf: logoURL)
-                    if let image = UIImage(data: imageData) {
-                        let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+        // ✅ État de lecture
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        nowPlayingInfo[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1.0
 
-                        DispatchQueue.main.async {
-                            var updatedInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
-                            updatedInfo[MPMediaItemPropertyArtwork] = artwork
-                            MPNowPlayingInfoCenter.default().nowPlayingInfo = updatedInfo
-                        }
+        // ✅ Durée (pour live stream, on met des valeurs indéfinies)
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = 0
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = 0
+
+        // ✅ Type de média
+        nowPlayingInfo[MPMediaItemPropertyMediaType] = MPMediaType.anyAudio.rawValue
+
+        // Mettre à jour immédiatement avec ces infos
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+
+        // ✅ Charger l'artwork de manière asynchrone
+        loadArtworkForNowPlaying(station: station, baseInfo: nowPlayingInfo)
+    }
+
+    // ✅ NOUVEAU - Charger l'artwork pour le Now Playing
+    private func loadArtworkForNowPlaying(station: Station, baseInfo: [String: Any]) {
+        // Essayer d'abord l'artwork de la piste si disponible
+        if let track = currentTrack, !track.title.isEmpty {
+            loadTrackArtwork(track: track, station: station, baseInfo: baseInfo)
+        } else {
+            // Sinon charger directement le logo de la station
+            loadStationArtwork(station: station, baseInfo: baseInfo)
+        }
+    }
+
+    // ✅ Charger l'artwork de la piste depuis iTunes
+    private func loadTrackArtwork(track: Track, station: Station, baseInfo: [String: Any]) {
+        let query = "\(track.artist) \(track.title)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "https://itunes.apple.com/search?term=\(query)&entity=song&limit=1"
+
+        guard let url = URL(string: urlString) else {
+            loadStationArtwork(station: station, baseInfo: baseInfo)
+            return
+        }
+
+        Task {
+            do {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                let result = try JSONDecoder().decode(ITunesSearchResponse.self, from: data)
+
+                if let firstResult = result.results.first,
+                   let artworkURLString = firstResult.artworkUrl100?.replacingOccurrences(of: "100x100", with: "600x600"),
+                   let artworkURL = URL(string: artworkURLString) {
+
+                    let (imageData, _) = try await URLSession.shared.data(from: artworkURL)
+                    if let image = UIImage(data: imageData) {
+                        await updateNowPlayingArtwork(image: image, baseInfo: baseInfo)
+                        return
                     }
-                } catch {
-                    print("Impossible de charger l'artwork: \(error)")
+                }
+
+                // Si pas d'artwork trouvé, utiliser le logo de la station
+                await MainActor.run {
+                    self.loadStationArtwork(station: station, baseInfo: baseInfo)
+                }
+            } catch {
+                print("Erreur lors du chargement de l'artwork iTunes: \(error)")
+                await MainActor.run {
+                    self.loadStationArtwork(station: station, baseInfo: baseInfo)
                 }
             }
         }
+    }
 
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    // ✅ Charger le logo de la station
+    private func loadStationArtwork(station: Station, baseInfo: [String: Any]) {
+        guard let logoURLString = station.logoURL,
+              !logoURLString.isEmpty,
+              let logoURL = URL(string: logoURLString) else {
+            // Utiliser l'image par défaut
+            if let defaultImage = UIImage(named: "default_artwork") {
+                updateNowPlayingArtworkSync(image: defaultImage, baseInfo: baseInfo)
+            }
+            return
+        }
+
+        Task {
+            do {
+                let (imageData, _) = try await URLSession.shared.data(from: logoURL)
+                if let image = UIImage(data: imageData) {
+                    await updateNowPlayingArtwork(image: image, baseInfo: baseInfo)
+                } else if let defaultImage = UIImage(named: "default_artwork") {
+                    await updateNowPlayingArtwork(image: defaultImage, baseInfo: baseInfo)
+                }
+            } catch {
+                print("Erreur lors du chargement du logo: \(error)")
+                if let defaultImage = UIImage(named: "default_artwork") {
+                    await updateNowPlayingArtwork(image: defaultImage, baseInfo: baseInfo)
+                }
+            }
+        }
+    }
+
+    // ✅ Mettre à jour l'artwork dans le Now Playing (async)
+    private func updateNowPlayingArtwork(image: UIImage, baseInfo: [String: Any]) async {
+        await MainActor.run {
+            updateNowPlayingArtworkSync(image: image, baseInfo: baseInfo)
+        }
+    }
+
+    // ✅ Mettre à jour l'artwork dans le Now Playing (sync)
+    private func updateNowPlayingArtworkSync(image: UIImage, baseInfo: [String: Any]) {
+        var updatedInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? baseInfo
+
+        // Créer l'artwork pour le lock screen
+        let artwork = MPMediaItemArtwork(boundsSize: image.size) { size in
+            return image
+        }
+
+        updatedInfo[MPMediaItemPropertyArtwork] = artwork
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = updatedInfo
+
+        print("✅ Now Playing Info mis à jour avec artwork")
     }
 
     deinit {
         // Nettoyage des observateurs
         NotificationCenter.default.removeObserver(self)
+
+        // Nettoyage des observateurs KVO
+        if let item = playerItem {
+            item.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
+            item.removeObserver(self, forKeyPath: "playbackBufferEmpty")
+            item.removeObserver(self, forKeyPath: "playbackBufferFull")
+        }
 
         statusObserver?.invalidate()
 

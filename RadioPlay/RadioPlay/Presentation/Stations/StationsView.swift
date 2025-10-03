@@ -173,7 +173,6 @@ struct StationsView: View {
     private var mainContent: some View {
         VStack(spacing: 0) {
             compactHeader
-                .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
 
@@ -236,6 +235,7 @@ struct StationsView: View {
             // Boutons d'action
             headerRightButtons
         }
+        .padding(.horizontal, horizontalPadding)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSearchExpanded)
     }
 
@@ -384,22 +384,50 @@ struct StationsView: View {
                         .id(category)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, horizontalPadding)
             }
         }
     }
 
-    // Liste des stations - simplifié
+    // Liste des stations - avec grille adaptative
     private var stationsList: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(filteredStations) { station in
-                    stationButton(for: station)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                // ✅ Grille pour iPad
+                LazyVGrid(columns: gridColumns, spacing: 16) {
+                    ForEach(filteredStations) { station in
+                        stationButton(for: station)
+                    }
                 }
+                .padding(.horizontal, horizontalPadding)
+                .padding(.bottom, 100)
+            } else {
+                // Liste pour iPhone
+                LazyVStack(spacing: 12) {
+                    ForEach(filteredStations) { station in
+                        stationButton(for: station)
+                    }
+                }
+                .padding(.horizontal, horizontalPadding)
+                .padding(.bottom, 100)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 100)
         }
+    }
+
+    // ✅ NOUVEAU - Colonnes adaptatives pour iPad
+    private var gridColumns: [GridItem] {
+        [
+            GridItem(.flexible(), spacing: 16),
+            GridItem(.flexible(), spacing: 16)
+        ]
+    }
+
+    // ✅ Padding adaptatif selon l'appareil
+    private var horizontalPadding: CGFloat {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 40 // Plus d'espace sur iPad
+        }
+        return 16
     }
 
     // ✅ Bouton pour chaque station
@@ -493,7 +521,7 @@ struct ModernCategoryButton: View {
     }
 }
 
-// ✅ Carte de station plus compacte
+// ✅ Carte de station plus compacte avec tailles adaptatives
 struct CompactStationCard: View {
     let station: Station
     let isFavorite: Bool
@@ -506,6 +534,23 @@ struct CompactStationCard: View {
     @Environment(\.colorScheme) var colorScheme
     @State private var showDeleteAlert = false
 
+    // ✅ NOUVEAU - Tailles adaptatives
+    private var logoSize: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 72 : 56
+    }
+
+    private var cardPadding: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 16 : 12
+    }
+
+    private var titleSize: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 18 : 16
+    }
+
+    private var subtitleSize: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 15 : 13
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             stationLogo
@@ -513,7 +558,7 @@ struct CompactStationCard: View {
             Spacer()
             actionButtons
         }
-        .padding(12)
+        .padding(cardPadding)
         .background(cardBackground)
         .alert("Supprimer cette station ?", isPresented: $showDeleteAlert) {
             Button("Annuler", role: .cancel) { }
@@ -525,7 +570,7 @@ struct CompactStationCard: View {
         }
     }
 
-    // ✅ Logo de la station
+    // ✅ Logo de la station avec taille adaptative
     private var stationLogo: some View {
         AsyncImage(url: URL(string: station.logoURL ?? "")) { phase in
             Group {
@@ -534,14 +579,14 @@ struct CompactStationCard: View {
                     logoPlaceholder
                         .overlay(ProgressView().progressViewStyle(CircularProgressViewStyle(tint: foregroundColor)).scaleEffect(0.7))
                 case .success(let image):
-                    image.resizable().aspectRatio(contentMode: .fit)
+                    image.resizable().aspectRatio(contentMode: .fill)
                 case .failure:
-                    logoPlaceholder.overlay(Image(systemName: "radio").font(.system(size: 24)).foregroundColor(.gray))
+                    logoPlaceholder.overlay(Image(systemName: "radio").font(.system(size: logoSize * 0.4)).foregroundColor(.gray))
                 @unknown default:
                     EmptyView()
                 }
             }
-            .frame(width: 56, height: 56)
+            .frame(width: logoSize, height: logoSize)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .shadow(color: isPlaying ? Color.blue.opacity(0.4) : Color.black.opacity(0.2), radius: isPlaying ? 8 : 4, x: 0, y: 2)
         }
@@ -552,12 +597,12 @@ struct CompactStationCard: View {
             .fill(logoBackgroundColor)
     }
 
-    // ✅ Infos de la station
+    // ✅ Infos de la station avec tailles adaptatives
     private var stationInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Text(station.name)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: titleSize, weight: .semibold))
                     .foregroundColor(titleColor)
                     .lineLimit(1)
 
@@ -567,7 +612,7 @@ struct CompactStationCard: View {
             }
 
             Text(station.subtitle)
-                .font(.system(size: 13))
+                .font(.system(size: subtitleSize))
                 .foregroundColor(.gray)
                 .lineLimit(1)
 

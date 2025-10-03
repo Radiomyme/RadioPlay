@@ -2,7 +2,7 @@
 //  AdvancedMiniPlayerView.swift - Version finale avec Liquid Glass
 //  RadioPlay
 //
-//  Created by Martin Parmentier on 24/05/2025.
+//  Created by Martin Parmentier.
 //
 
 import SwiftUI
@@ -84,18 +84,23 @@ struct AdvancedMiniPlayerView: View {
                         .frame(width: 56, height: 56)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .matchedGeometryEffect(id: "artwork", in: animationNamespace)
-                } else if let logoURL = audioManager.currentStation?.logoURL {
-                    // Afficher le logo de la station si pas d'artwork de piste
+                } else if let logoURL = audioManager.currentStation?.logoURL, !logoURL.isEmpty {
+                    // ✅ Afficher le logo de la station si pas d'artwork de piste
                     AsyncImage(url: URL(string: logoURL)) { phase in
                         switch phase {
                         case .empty:
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(width: 56, height: 56)
+                                .overlay(
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                        .scaleEffect(0.6)
+                                )
                         case .success(let image):
                             image
                                 .resizable()
-                                .aspectRatio(contentMode: .fit)
+                                .aspectRatio(contentMode: .fill)
                                 .frame(width: 56, height: 56)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         case .failure:
@@ -104,6 +109,7 @@ struct AdvancedMiniPlayerView: View {
                                 .frame(width: 56, height: 56)
                                 .overlay(
                                     Image(systemName: "radio")
+                                        .font(.system(size: 24))
                                         .foregroundColor(.gray)
                                 )
                         @unknown default:
@@ -118,6 +124,7 @@ struct AdvancedMiniPlayerView: View {
                         .frame(width: 56, height: 56)
                         .overlay(
                             Image(systemName: "radio")
+                                .font(.system(size: 24))
                                 .foregroundColor(.gray)
                         )
                         .matchedGeometryEffect(id: "artwork", in: animationNamespace)
@@ -149,22 +156,11 @@ struct AdvancedMiniPlayerView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Visualiseur audio simple
+            // Visualiseur audio animé
             if audioManager.isPlaying && !audioManager.isBuffering {
-                HStack(spacing: 3) {
-                    ForEach(0..<3, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(miniPlayerAccentColor)
-                            .frame(width: 3, height: CGFloat.random(in: 10...24))
-                            .animation(
-                                .easeInOut(duration: 0.5)
-                                .repeatForever(autoreverses: true)
-                                .delay(Double(index) * 0.1),
-                                value: audioManager.isPlaying
-                            )
-                    }
-                }
-                .padding(.trailing, 12)
+                AnimatedAudioBarsView()
+                    .frame(width: 24, height: 24)
+                    .padding(.trailing, 12)
             }
 
             // Contrôles
@@ -333,7 +329,7 @@ struct AdvancedMiniPlayerView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .shadow(color: .black.opacity(0.5), radius: 30, x: 0, y: 15)
                                 .matchedGeometryEffect(id: "artwork", in: animationNamespace)
-                        } else if let logoURL = audioManager.currentStation?.logoURL {
+                        } else if let logoURL = audioManager.currentStation?.logoURL, !logoURL.isEmpty {
                             AsyncImage(url: URL(string: logoURL)) { phase in
                                 switch phase {
                                 case .empty:
@@ -343,7 +339,7 @@ struct AdvancedMiniPlayerView: View {
                                 case .success(let image):
                                     image
                                         .resizable()
-                                        .aspectRatio(contentMode: .fit)
+                                        .aspectRatio(contentMode: .fill)
                                         .frame(width: 280, height: 280)
                                         .clipShape(RoundedRectangle(cornerRadius: 20))
                                         .shadow(color: .black.opacity(0.5), radius: 30, x: 0, y: 15)
@@ -502,7 +498,7 @@ struct AdvancedMiniPlayerView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .blur(radius: 60)
                     .opacity(0.3)
-            } else if let logoURL = audioManager.currentStation?.logoURL {
+            } else if let logoURL = audioManager.currentStation?.logoURL, !logoURL.isEmpty {
                 // Utiliser le logo de la station en arrière-plan
                 AsyncImage(url: URL(string: logoURL)) { phase in
                     if case .success(let image) = phase {
@@ -609,5 +605,31 @@ struct AdvancedMiniPlayerView: View {
 
     private func cancelSleepTimer() {
         sleepTimerService.stopTimer()
+    }
+}
+
+// MARK: - Composant de visualiseur audio animé
+
+struct AnimatedAudioBarsView: View {
+    @State private var heights: [CGFloat] = [0.3, 0.6, 0.9, 0.5]
+
+    private let timer = Timer.publish(every: 0.15, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(0..<4, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(Color.white)
+                    .frame(width: 3, height: 24 * heights[index])
+                    .animation(.easeInOut(duration: 0.3), value: heights[index])
+            }
+        }
+        .frame(height: 24)
+        .onReceive(timer) { _ in
+            // Générer de nouvelles hauteurs aléatoires pour créer l'animation
+            withAnimation(.easeInOut(duration: 0.3)) {
+                heights = heights.map { _ in CGFloat.random(in: 0.2...1.0) }
+            }
+        }
     }
 }
