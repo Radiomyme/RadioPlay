@@ -13,18 +13,15 @@ struct StationsView: View {
 
     private var availableCategories: [CategoryInfo] {
         var categories: [CategoryInfo] = [
-            CategoryInfo(id: "all", name: "Toutes", icon: "radio", color: .blue)
+            CategoryInfo(id: "all", name: L10n.Nav.all, icon: "radio", color: .blue)
         ]
 
-        // Ajouter les favoris
         if !viewModel.favoriteStations.isEmpty {
-            categories.append(CategoryInfo(id: "favorites", name: "Favoris", icon: "heart.fill", color: .red))
+            categories.append(CategoryInfo(id: "favorites", name: L10n.Nav.favorites, icon: "heart.fill", color: .red))
         }
 
-        // Extraire les catégories uniques depuis les stations
         let uniqueCategories = Set(viewModel.stations.flatMap { $0.categories ?? [] })
 
-        // Mapper les catégories avec leurs icônes et couleurs
         let categoryMappings: [String: (icon: String, color: Color)] = [
             "news": ("newspaper.fill", .orange),
             "music": ("music.note", .purple),
@@ -71,7 +68,6 @@ struct StationsView: View {
         case "favorites":
             return stations.filter { viewModel.isFavorite(station: $0) }
         default:
-            // Filtrer par catégorie réelle du JSON
             return stations.filter { station in
                 guard let categories = station.categories else { return false }
                 return categories.contains { category in
@@ -158,7 +154,7 @@ struct StationsView: View {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .dark ? .white : .blue))
                     .scaleEffect(0.7)
-                Text("Mise à jour...")
+                Text(L10n.Stations.updating)
                     .font(.caption)
                     .foregroundColor(.gray)
             }
@@ -178,7 +174,7 @@ struct StationsView: View {
             }
         } else if filteredStations.isEmpty {
             EmptyStateView(
-                categoryName: availableCategories.first(where: { $0.id == selectedCategory })?.name ?? "Toutes",
+                categoryName: availableCategories.first(where: { $0.id == selectedCategory })?.name ?? L10n.Nav.all,
                 searchText: searchText
             )
         } else {
@@ -186,15 +182,13 @@ struct StationsView: View {
         }
     }
 
-    // MARK: - Composants
-
     private var compactHeader: some View {
         HStack(spacing: 12) {
             headerLeftContent
             Spacer()
             headerRightButtons
         }
-        .padding(.horizontal, horizontalPadding)
+        .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSearchExpanded)
     }
 
@@ -206,7 +200,7 @@ struct StationsView: View {
                     .foregroundColor(.gray)
                     .font(.system(size: 16))
 
-                TextField("Rechercher", text: $searchText)
+                TextField(L10n.Stations.searchPlaceholder, text: $searchText)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
                     .focused($isSearchFocused)
                     .autocorrectionDisabled()
@@ -227,7 +221,7 @@ struct StationsView: View {
             .cornerRadius(10)
             .transition(.scale.combined(with: .opacity))
         } else {
-            Text("Radio Play")
+            Text(L10n.Stations.title)
                 .font(.system(size: 26, weight: .bold, design: .rounded))
                 .foregroundColor(colorScheme == .dark ? .white : .black)
                 .transition(.scale.combined(with: .opacity))
@@ -331,7 +325,7 @@ struct StationsView: View {
                         .id(category.id)
                     }
                 }
-                .padding(.horizontal, horizontalPadding)
+                .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
             }
         }
     }
@@ -344,7 +338,7 @@ struct StationsView: View {
                         stationButton(for: station)
                     }
                 }
-                .padding(.horizontal, horizontalPadding)
+                .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
                 .padding(.bottom, 100)
             } else {
                 LazyVStack(spacing: 12) {
@@ -352,7 +346,7 @@ struct StationsView: View {
                         stationButton(for: station)
                     }
                 }
-                .padding(.horizontal, horizontalPadding)
+                .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
                 .padding(.bottom, 100)
             }
         }
@@ -363,13 +357,6 @@ struct StationsView: View {
             GridItem(.flexible(), spacing: 16),
             GridItem(.flexible(), spacing: 16)
         ]
-    }
-
-    private var horizontalPadding: CGFloat {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return 40
-        }
-        return 16
     }
 
     private func stationButton(for station: Station) -> some View {
@@ -467,7 +454,6 @@ struct ModernCategoryButton: View {
     }
 }
 
-// Reste du code identique...
 struct CompactStationCard: View {
     let station: Station
     let isFavorite: Bool
@@ -481,7 +467,7 @@ struct CompactStationCard: View {
     @State private var showDeleteAlert = false
 
     private var logoSize: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 72 : 56
+        AppSettings.logoSize(for: UIDevice.current.userInterfaceIdiom)
     }
 
     private var cardPadding: CGFloat {
@@ -505,13 +491,13 @@ struct CompactStationCard: View {
         }
         .padding(cardPadding)
         .background(cardBackground)
-        .alert("Supprimer cette station ?", isPresented: $showDeleteAlert) {
-            Button("Annuler", role: .cancel) { }
-            Button("Supprimer", role: .destructive) {
+        .alert(L10n.AddStation.deleteConfirm, isPresented: $showDeleteAlert) {
+            Button(L10n.General.cancel, role: .cancel) { }
+            Button(L10n.General.delete, role: .destructive) {
                 onDelete?()
             }
         } message: {
-            Text("Cette action est irréversible.")
+            Text(L10n.AddStation.deleteMessage)
         }
     }
 
@@ -564,7 +550,7 @@ struct CompactStationCard: View {
     }
 
     private var customBadge: some View {
-        Text("Custom")
+        Text(L10n.Stations.customBadge)
             .font(.system(size: 9, weight: .semibold))
             .foregroundColor(.blue)
             .padding(.horizontal, 6)
@@ -579,7 +565,7 @@ struct CompactStationCard: View {
                 .fill(isPlaying ? Color.green : Color.red)
                 .frame(width: 6, height: 6)
 
-            Text(isPlaying ? "En écoute" : "En direct")
+            Text(isPlaying ? L10n.Stations.playing : L10n.Stations.live)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.gray)
         }
@@ -710,7 +696,7 @@ struct InitialLoadingView: View {
                     .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .dark ? .white : .blue))
                     .scaleEffect(1.3)
 
-                Text("Chargement...")
+                Text(L10n.General.loading)
                     .font(.headline)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
             }
@@ -734,7 +720,7 @@ struct ErrorView: View {
                 .font(.system(size: 50))
                 .foregroundColor(.gray)
 
-            Text("Connexion impossible")
+            Text(L10n.Error.connectionFailed)
                 .font(.headline)
                 .foregroundColor(colorScheme == .dark ? .white : .black)
 
@@ -747,7 +733,7 @@ struct ErrorView: View {
             Button(action: onRetry) {
                 HStack {
                     Image(systemName: "arrow.clockwise")
-                    Text("Réessayer")
+                    Text(L10n.General.retry)
                 }
                 .font(.headline)
                 .foregroundColor(.white)
@@ -791,21 +777,21 @@ struct EmptyStateView: View {
 
     private var emptyTitle: String {
         if !searchText.isEmpty {
-            return "Aucun résultat"
+            return L10n.Empty.noResults
         }
-        if categoryName == "Favoris" {
-            return "Aucun favori"
+        if categoryName == L10n.Nav.favorites {
+            return L10n.Empty.noFavorites
         }
-        return "Aucune station"
+        return L10n.Empty.noStations
     }
 
     private var emptyMessage: String {
         if !searchText.isEmpty {
-            return "Essayez une autre recherche"
+            return L10n.Empty.tryAnotherSearch
         }
-        if categoryName == "Favoris" {
-            return "Ajoutez des stations à vos favoris en appuyant sur le cœur"
+        if categoryName == L10n.Nav.favorites {
+            return L10n.Empty.addFavoritesMessage
         }
-        return "Aucune station disponible dans cette catégorie"
+        return L10n.Empty.noStationsCategory
     }
 }

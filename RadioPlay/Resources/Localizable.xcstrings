@@ -355,25 +355,13 @@
     "Ajouter une radio" : {
 
     },
-    "Annuler" : {
-
-    },
     "Annuler la minuterie" : {
 
     },
     "Catégories" : {
 
     },
-    "Cette action est irréversible." : {
-
-    },
     "Chargement..." : {
-
-    },
-    "Connexion impossible" : {
-
-    },
-    "Custom" : {
 
     },
     "empty.add_favorites_message" : {
@@ -513,12 +501,6 @@
           }
         }
       }
-    },
-    "En direct" : {
-
-    },
-    "En écoute" : {
-
     },
     "error.connection_failed" : {
       "extractionState" : "stale",
@@ -736,9 +718,6 @@
     "Minuterie de veille" : {
 
     },
-    "Mise à jour..." : {
-
-    },
     "nav.all" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -929,16 +908,7 @@
         }
       }
     },
-    "Radio Play" : {
-
-    },
     "RadioPlay" : {
-
-    },
-    "Rechercher" : {
-
-    },
-    "Réessayer" : {
 
     },
     "Restant" : {
@@ -1865,12 +1835,6 @@
       }
     },
     "Stream valide ✓" : {
-
-    },
-    "Supprimer" : {
-
-    },
-    "Supprimer cette station ?" : {
 
     },
     "Test en cours..." : {
