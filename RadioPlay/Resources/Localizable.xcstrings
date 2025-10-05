@@ -21,6 +21,9 @@
         }
       }
     },
+    "Ad" : {
+
+    },
     "add_station.button" : {
       "extractionState" : "stale",
       "localizations" : {

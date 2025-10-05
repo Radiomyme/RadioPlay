@@ -2,7 +2,6 @@ import SwiftUI
 import AVFoundation
 import CoreData
 import MediaPlayer
-import AppTrackingTransparency
 
 @main
 struct RadioPlayApp: SwiftUI.App {
@@ -82,24 +81,5 @@ struct RadioPlayApp: SwiftUI.App {
         commandCenter.playCommand.isEnabled = true
         commandCenter.pauseCommand.isEnabled = true
         commandCenter.togglePlayPauseCommand.isEnabled = true
-    }
-
-    // MARK: - App Tracking Transparency
-
-    private func requestTrackingAuthorization() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            if #available(iOS 14, *) {
-                ATTrackingManager.requestTrackingAuthorization { status in
-                    switch status {
-                    case .authorized:
-                        Logger.log("Tracking authorized", category: .network, type: .default)
-                    case .denied, .restricted, .notDetermined:
-                        Logger.log("Tracking not authorized", category: .network, type: .default)
-                    @unknown default:
-                        break
-                    }
-                }
-            }
-        }
     }
 }

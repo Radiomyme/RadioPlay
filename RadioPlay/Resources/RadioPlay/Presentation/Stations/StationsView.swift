@@ -327,16 +327,26 @@ struct StationsView: View {
         ScrollView {
             if UIDevice.current.userInterfaceIdiom == .pad {
                 LazyVGrid(columns: gridColumns, spacing: 16) {
-                    ForEach(filteredStations) { station in
+                    ForEach(Array(filteredStations.enumerated()), id: \.element.id) { index, station in
                         stationButton(for: station)
+
+                        // Insérer une pub tous les 4 stations
+                        if AppSettings.enableAds && (index + 1) % 4 == 0 && index != filteredStations.count - 1 {
+                            NativeAdStationCard()
+                        }
                     }
                 }
                 .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
                 .padding(.bottom, calculateBottomPadding())
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(filteredStations) { station in
+                    ForEach(Array(filteredStations.enumerated()), id: \.element.id) { index, station in
                         stationButton(for: station)
+
+                        // Insérer une pub tous les 4 stations
+                        if AppSettings.enableAds && (index + 1) % 4 == 0 && index != filteredStations.count - 1 {
+                            NativeAdStationCard()
+                        }
                     }
                 }
                 .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
@@ -347,11 +357,6 @@ struct StationsView: View {
 
     private func calculateBottomPadding() -> CGFloat {
         var padding: CGFloat = 20
-
-        // Espace pour la bannière pub
-        if AppSettings.enableAds {
-            padding += 60
-        }
 
         // Espace pour le mini-player
         if audioManager.currentStation != nil {
