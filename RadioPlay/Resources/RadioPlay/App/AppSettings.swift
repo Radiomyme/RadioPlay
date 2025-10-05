@@ -101,7 +101,14 @@ struct AppSettings {
     static let enableSleepTimer = true
     static let enableAirPlay = true
     static let enableShareFeature = true
-    
+    static let enableAds = true
+
+    // MARK: - AdMob Configuration
+
+    static let adMobAppID = "ca-app-pub-4466685095115509~5892890271"
+    static let adMobBannerID = "ca-app-pub-4466685095115509/6160328830"
+    static let adMobNativeID = "ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"
+
     // MARK: - Localization
     
     enum SupportedLanguage: String, CaseIterable {

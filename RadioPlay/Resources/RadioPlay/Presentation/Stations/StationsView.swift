@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct StationsView: View {
-    @StateObject private var viewModel = StationsViewModel()
+    @EnvironmentObject private var viewModel: StationsViewModel
     @EnvironmentObject private var audioManager: AudioPlayerManager
     @Environment(\.colorScheme) var colorScheme
     @State private var searchText = ""
@@ -116,11 +116,6 @@ struct StationsView: View {
                 }
             }
             .navigationBarHidden(true)
-            .task {
-                if viewModel.stations.isEmpty || !viewModel.hasInitiallyLoaded {
-                    await viewModel.loadStations()
-                }
-            }
             .refreshable {
                 await viewModel.loadStations()
             }
@@ -149,7 +144,7 @@ struct StationsView: View {
 
     @ViewBuilder
     private var loadingIndicator: some View {
-        if viewModel.isLoading && !viewModel.stations.isEmpty {
+        if viewModel.isLoading {
             HStack(spacing: 8) {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .dark ? .white : .blue))
@@ -164,9 +159,7 @@ struct StationsView: View {
 
     @ViewBuilder
     private var contentArea: some View {
-        if !viewModel.hasInitiallyLoaded && viewModel.stations.isEmpty {
-            InitialLoadingView()
-        } else if let errorMessage = viewModel.errorMessage, viewModel.stations.isEmpty {
+        if let errorMessage = viewModel.errorMessage, viewModel.stations.isEmpty {
             ErrorView(message: errorMessage) {
                 Task {
                     await viewModel.loadStations()
@@ -339,7 +332,7 @@ struct StationsView: View {
                     }
                 }
                 .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
-                .padding(.bottom, 100)
+                .padding(.bottom, calculateBottomPadding())
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(filteredStations) { station in
@@ -347,9 +340,25 @@ struct StationsView: View {
                     }
                 }
                 .padding(.horizontal, AppSettings.horizontalPadding(for: UIDevice.current.userInterfaceIdiom))
-                .padding(.bottom, 100)
+                .padding(.bottom, calculateBottomPadding())
             }
         }
+    }
+
+    private func calculateBottomPadding() -> CGFloat {
+        var padding: CGFloat = 20
+
+        // Espace pour la bannière pub
+        if AppSettings.enableAds {
+            padding += 60
+        }
+
+        // Espace pour le mini-player
+        if audioManager.currentStation != nil {
+            padding += 100
+        }
+
+        return padding
     }
 
     private var gridColumns: [GridItem] {
@@ -675,35 +684,6 @@ extension View {
                 .onChanged { _ in onPress() }
                 .onEnded { _ in onRelease() }
         )
-    }
-}
-
-struct InitialLoadingView: View {
-    @Environment(\.colorScheme) var colorScheme
-
-    var body: some View {
-        VStack(spacing: 30) {
-            Spacer()
-
-            Image("radio-logo")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 100, height: 100)
-                .opacity(0.8)
-
-            VStack(spacing: 12) {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .dark ? .white : .blue))
-                    .scaleEffect(1.3)
-
-                Text(L10n.General.loading)
-                    .font(.headline)
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
-            }
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

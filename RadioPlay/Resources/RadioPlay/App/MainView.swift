@@ -1,10 +1,3 @@
-//
-//  MainView.swift
-//  RadioPlay
-//
-//  Created by Martin Parmentier on 17/05/2025.
-//
-
 import SwiftUI
 
 struct MainView: View {
@@ -13,10 +6,21 @@ struct MainView: View {
 
     var body: some View {
         ZStack {
-            StationsView()
-                .environmentObject(stationsViewModel)
-                .environmentObject(audioManager)
-                // Pas besoin de padding fixe car le player avancé gère son propre espace
+            if stationsViewModel.isInitialLoadComplete {
+                StationsView()
+                    .environmentObject(stationsViewModel)
+                    .environmentObject(audioManager)
+                    .transition(.opacity)
+            } else {
+                LaunchScreenView()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: stationsViewModel.isInitialLoadComplete)
+        .task {
+            if !stationsViewModel.isInitialLoadComplete {
+                await stationsViewModel.loadStations()
+            }
         }
     }
 }

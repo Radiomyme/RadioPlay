@@ -5,6 +5,8 @@ class StationsRepository {
     private let remoteConfigService = RemoteConfigService()
     private let coreDataManager = CoreDataManager.shared
 
+    // MARK: - Load Stations
+
     func loadStations() async throws -> [Station] {
         let localStations = fetchLocalStations()
 
@@ -15,7 +17,7 @@ class StationsRepository {
                     return stations
                 }
             } catch {
-                print("⚠️ Erreur lors du chargement du JSON local: \(error)")
+                Logger.log("Local JSON loading error: \(error)", category: .database, type: .error)
             }
         }
 
@@ -24,7 +26,7 @@ class StationsRepository {
             await saveStationsLocally(remoteStations)
             return remoteStations
         } catch {
-            Logger.log("Failed to fetch remote stations: \(error)", category: .network, type: .error)
+            Logger.log("Remote stations fetch failed: \(error)", category: .network, type: .error)
 
             if localStations.isEmpty {
                 throw error
@@ -34,26 +36,28 @@ class StationsRepository {
         }
     }
 
+    // MARK: - Local JSON
+
     private func loadStationsFromLocalJSON() -> [Station]? {
-        guard let path = Bundle.main.path(forResource: "RadioStations+Categories", ofType: "json") else {
-            print("⚠️ RadioStations+Categories.json introuvable dans le bundle")
+        guard let path = Bundle.main.path(
+            forResource: AppSettings.localStationsFileName,
+            ofType: "json"
+        ) else {
+            Logger.log("Local JSON file not found", category: .database, type: .error)
             return createDefaultStations()
         }
 
         do {
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let stations = try JSONDecoder().decode([Station].self, from: data)
-            print("✅ Chargement de \(stations.count) stations depuis le JSON local")
             return stations
         } catch {
-            print("❌ Erreur lors du décodage du JSON: \(error)")
+            Logger.log("JSON decoding error: \(error)", category: .database, type: .error)
             return createDefaultStations()
         }
     }
 
-    // ✅ NOUVEAU - Stations par défaut
     private func createDefaultStations() -> [Station] {
-        print("📻 Création de stations par défaut")
         return [
             Station(
                 id: "1",
@@ -85,6 +89,8 @@ class StationsRepository {
         ]
     }
 
+    // MARK: - CoreData Operations
+
     private func fetchLocalStations() -> [Station] {
         let context = coreDataManager.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<StationEntity> = StationEntity.fetchRequest()
@@ -99,11 +105,11 @@ class StationsRepository {
                     streamURL: entity.streamURL ?? "",
                     imageURL: entity.imageURL,
                     logoURL: entity.logoURL,
-                    categories: entity.categories as? [String]  // ✅ Cast sécurisé
+                    categories: entity.categories as? [String]
                 )
             }
         } catch {
-            print("❌ Failed to fetch local stations: \(error)")
+            Logger.log("CoreData fetch failed: \(error)", category: .database, type: .error)
             return []
         }
     }
@@ -112,14 +118,12 @@ class StationsRepository {
         await MainActor.run {
             let context = coreDataManager.persistentContainer.viewContext
 
-            // Supprimer les stations existantes
             let fetchRequest: NSFetchRequest<NSFetchRequestResult> = StationEntity.fetchRequest()
             let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
 
             do {
                 try context.execute(deleteRequest)
 
-                // Ajouter les nouvelles stations
                 for station in stations {
                     let entity = StationEntity(context: context)
                     entity.id = station.id
@@ -129,16 +133,14 @@ class StationsRepository {
                     entity.imageURL = station.imageURL
                     entity.logoURL = station.logoURL
 
-                    // ✅ MODIFIÉ - Utiliser le transformer personnalisé
                     if let categories = station.categories {
-                        entity.categories = categories as! [String]
+                        entity.categories = categories as [String]
                     }
                 }
 
                 coreDataManager.saveContext()
-                print("✅ Saved \(stations.count) stations locally")
             } catch {
-                print("❌ Failed to save stations locally: \(error)")
+                Logger.log("CoreData save failed: \(error)", category: .database, type: .error)
             }
         }
     }

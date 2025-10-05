@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		36976B6B2E90284A003B6679 /* LaunchScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36976B6A2E90284A003B6679 /* LaunchScreenView.swift */; };
 		36976BD62E92C48B003B6679 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 36976BD52E92C48B003B6679 /* Localizable.xcstrings */; };
+		36976BDA2E92D3B1003B6679 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 36976BD92E92D3B1003B6679 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				36976BDA2E92D3B1003B6679 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -142,6 +144,7 @@
 			);
 			name = RadioPlay;
 			packageProductDependencies = (
+				36976BD92E92D3B1003B6679 /* GoogleMobileAds */,
 			);
 			productName = RadioPlay;
 			productReference = 36A6286F2DD88911001323D2 /* RadioPlay.app */;
@@ -225,6 +228,9 @@
 			);
 			mainGroup = 36A628662DD88911001323D2;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				36976BD82E92D3B1003B6679 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 36A628702DD88911001323D2 /* Products */;
 			projectDirPath = "";
@@ -432,15 +438,19 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 20251005;
 				DEVELOPMENT_TEAM = 8A4M4QND2E;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Resources/RadioPlay/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RadioPlay;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Cette application utilise Apple Music pour rechercher des pochettes d'albums";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use this data to provide you with personalized ads and support the ongoing development of this application";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
@@ -448,7 +458,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -466,15 +476,19 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 20251005;
 				DEVELOPMENT_TEAM = 8A4M4QND2E;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Resources/RadioPlay/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RadioPlay;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Cette application utilise Apple Music pour rechercher des pochettes d'albums";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use this data to provide you with personalized ads and support the ongoing development of this application";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
@@ -482,7 +496,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -604,6 +618,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		36976BD82E92D3B1003B6679 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		36976BD92E92D3B1003B6679 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 36976BD82E92D3B1003B6679 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 36A628672DD88911001323D2 /* Project object */;
 }

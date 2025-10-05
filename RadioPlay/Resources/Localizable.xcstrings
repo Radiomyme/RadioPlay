@@ -21,12 +21,6 @@
         }
       }
     },
-    "%lld min" : {
-
-    },
-    "1 heure" : {
-
-    },
     "add_station.button" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -355,13 +349,7 @@
     "Ajouter une radio" : {
 
     },
-    "Annuler la minuterie" : {
-
-    },
     "Catégories" : {
-
-    },
-    "Chargement..." : {
 
     },
     "empty.add_favorites_message" : {
@@ -548,9 +536,6 @@
         }
       }
     },
-    "Fermer" : {
-
-    },
     "general.cancel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -713,9 +698,6 @@
       }
     },
     "Le flux doit être au format MP3, AAC ou OGG" : {
-
-    },
-    "Minuterie de veille" : {
 
     },
     "nav.all" : {
@@ -907,15 +889,6 @@
           }
         }
       }
-    },
-    "RadioPlay" : {
-
-    },
-    "Restant" : {
-
-    },
-    "Sélectionner une durée" : {
-
     },
     "settings.about" : {
       "extractionState" : "stale",
@@ -1844,6 +1817,9 @@
 
     },
     "Validation" : {
+
+    },
+    "Version %@" : {
 
     }
   },
