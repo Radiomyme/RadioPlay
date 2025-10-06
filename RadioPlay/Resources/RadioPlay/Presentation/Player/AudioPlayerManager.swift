@@ -22,8 +22,6 @@ class AudioPlayerManager: ObservableObject {
         setupRemoteCommandCenter()
     }
 
-    // MARK: - Setup
-
     private func setupObservers() {
         audioService.$isPlaying
             .assign(to: \.isPlaying, on: self)
@@ -73,11 +71,10 @@ class AudioPlayerManager: ObservableObject {
         }
     }
 
-    // MARK: - Playback Control
-
     func play(station: Station) {
         if currentStation?.id != station.id {
             currentStation = station
+            artwork = nil
             audioService.play(station: station)
             loadStationLogoAsArtwork(station: station)
         } else if !isPlaying {
@@ -95,8 +92,6 @@ class AudioPlayerManager: ObservableObject {
         artwork = nil
     }
 
-    // MARK: - Sleep Timer
-
     func setupSleepTimer(duration: TimeInterval) {
         sleepTimerService.startTimer(duration: duration) { [weak self] in
             self?.stop()
@@ -107,24 +102,21 @@ class AudioPlayerManager: ObservableObject {
         sleepTimerService.stopTimer()
     }
 
-    // MARK: - Artwork Management
-
     private func updateArtwork(for track: Track) {
+        guard let station = currentStation, station.useStreamMetadata else {
+            return
+        }
+
         Task {
             do {
                 let artworkService = ArtworkService()
                 let image = try await artworkService.fetchArtwork(for: track)
                 await MainActor.run {
-                    self.artwork = image ?? UIImage(named: "default_artwork")
+                    self.artwork = image
                     self.updateNowPlayingInfo()
                 }
             } catch {
                 await MainActor.run {
-                    if let station = self.currentStation {
-                        self.loadStationLogoAsArtwork(station: station)
-                    } else {
-                        self.artwork = UIImage(named: "default_artwork")
-                    }
                     self.updateNowPlayingInfo()
                 }
             }
@@ -132,10 +124,6 @@ class AudioPlayerManager: ObservableObject {
     }
 
     private func loadStationLogoAsArtwork(station: Station) {
-        guard artwork == nil || artwork == UIImage(named: "default_artwork") else {
-            return
-        }
-
         guard let logoURLString = station.logoURL, !logoURLString.isEmpty,
               let logoURL = URL(string: logoURLString) else {
             self.artwork = UIImage(named: "default_artwork")
@@ -146,11 +134,14 @@ class AudioPlayerManager: ObservableObject {
             do {
                 let (data, _) = try await URLSession.shared.data(from: logoURL)
                 if let image = UIImage(data: data) {
+                    let squareImage = image.resizedToSquare(size: 600)
                     await MainActor.run {
-                        if self.artwork == nil || self.artwork == UIImage(named: "default_artwork") {
-                            self.artwork = image
-                            self.updateNowPlayingInfo()
-                        }
+                        self.artwork = squareImage
+                        self.updateNowPlayingInfo()
+                    }
+                } else {
+                    await MainActor.run {
+                        self.artwork = UIImage(named: "default_artwork")
                     }
                 }
             } catch {
@@ -161,14 +152,12 @@ class AudioPlayerManager: ObservableObject {
         }
     }
 
-    // MARK: - Now Playing Info
-
     private func updateNowPlayingInfo() {
         guard let station = currentStation else { return }
 
         var nowPlayingInfo = [String: Any]()
 
-        if let track = currentTrack {
+        if let track = currentTrack, station.useStreamMetadata {
             nowPlayingInfo[MPMediaItemPropertyTitle] = track.title
             nowPlayingInfo[MPMediaItemPropertyArtist] = track.artist
         } else {

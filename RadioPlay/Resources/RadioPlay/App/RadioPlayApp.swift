@@ -33,21 +33,10 @@ struct RadioPlayApp: SwiftUI.App {
                 VStack {
                     Spacer()
 
-                    // Mini player au-dessus de la pub
                     if audioManager.currentStation != nil {
                         AdvancedMiniPlayerView()
                             .environmentObject(audioManager)
                             .transition(.move(edge: .bottom))
-                            .zIndex(2)
-                    }
-
-                    // Bannière pub tout en bas
-                    if AppSettings.enableAds {
-                        AdaptiveBannerAdView()
-                            .frame(height: 50)
-                            .background(Color.black.opacity(0.05))
-                            .transition(.move(edge: .bottom))
-                            .zIndex(1)
                     }
                 }
                 .edgesIgnoringSafeArea(.bottom)
@@ -67,7 +56,7 @@ struct RadioPlayApp: SwiftUI.App {
                 try AVAudioSession.sharedInstance().setCategory(
                     .playback,
                     mode: .default,
-                    options: [.allowAirPlay, .allowBluetooth]
+                    options: [.allowAirPlay, .allowBluetoothHFP]
                 )
                 try AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
             } catch {

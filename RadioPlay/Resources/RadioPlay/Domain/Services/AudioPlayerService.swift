@@ -476,6 +476,10 @@ class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutput
     }
 
     private func parseStreamTitle(_ streamTitle: String) {
+        guard let station = currentStation, station.useStreamMetadata else {
+            return
+        }
+
         var cleanTitle = streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if let sectionIndex = cleanTitle.firstIndex(of: "§") {

@@ -1,11 +1,3 @@
-//
-//  Station.swift
-//  RadioPlay
-//
-//  Created by Martin Parmentier on 17/05/2025.
-//
-
-
 import Foundation
 
 struct Station: Identifiable, Decodable {
@@ -16,6 +8,7 @@ struct Station: Identifiable, Decodable {
     let imageURL: String?
     let logoURL: String?
     let categories: [String]?
+    let useStreamMetadata: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -25,10 +18,10 @@ struct Station: Identifiable, Decodable {
         case imageURL = "backgroundImage"
         case logoURL = "radioLogo"
         case categories
+        case useStreamMetadata
     }
 
-    // Initialisation avec valeurs par défaut pour rendre categories optionnel
-    init(id: String, name: String, subtitle: String, streamURL: String, imageURL: String?, logoURL: String?, categories: [String]? = nil) {
+    init(id: String, name: String, subtitle: String, streamURL: String, imageURL: String?, logoURL: String?, categories: [String]? = nil, useStreamMetadata: Bool = true) {
         self.id = id
         self.name = name
         self.subtitle = subtitle
@@ -36,6 +29,7 @@ struct Station: Identifiable, Decodable {
         self.imageURL = imageURL
         self.logoURL = logoURL
         self.categories = categories
+        self.useStreamMetadata = useStreamMetadata
     }
 }
 

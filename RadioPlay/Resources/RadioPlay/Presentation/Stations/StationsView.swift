@@ -358,9 +358,14 @@ struct StationsView: View {
     private func calculateBottomPadding() -> CGFloat {
         var padding: CGFloat = 20
 
-        // Espace pour le mini-player
         if audioManager.currentStation != nil {
-            padding += 100
+            let keyWindow = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }
+
+            let safeAreaBottom = keyWindow?.safeAreaInsets.bottom ?? 0
+            padding += 80 + safeAreaBottom + 12
         }
 
         return padding
@@ -523,7 +528,12 @@ struct CompactStationCard: View {
                     logoPlaceholder
                         .overlay(ProgressView().progressViewStyle(CircularProgressViewStyle(tint: foregroundColor)).scaleEffect(0.7))
                 case .success(let image):
-                    image.resizable().aspectRatio(contentMode: .fill)
+                    GeometryReader { geometry in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
                 case .failure:
                     logoPlaceholder.overlay(Image(systemName: "radio").font(.system(size: logoSize * 0.4)).foregroundColor(.gray))
                 @unknown default:
@@ -531,6 +541,7 @@ struct CompactStationCard: View {
                 }
             }
             .frame(width: logoSize, height: logoSize)
+            .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .shadow(color: isPlaying ? Color.blue.opacity(0.4) : Color.black.opacity(0.2), radius: isPlaying ? 8 : 4, x: 0, y: 2)
         }

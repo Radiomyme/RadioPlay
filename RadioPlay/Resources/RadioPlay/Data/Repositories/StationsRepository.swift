@@ -5,38 +5,33 @@ class StationsRepository {
     private let remoteConfigService = RemoteConfigService()
     private let coreDataManager = CoreDataManager.shared
 
-    // MARK: - Load Stations
-
     func loadStations() async throws -> [Station] {
-        let localStations = fetchLocalStations()
-
-        if localStations.isEmpty {
-            do {
-                if let stations = loadStationsFromLocalJSON() {
-                    await saveStationsLocally(stations)
-                    return stations
-                }
-            } catch {
-                Logger.log("Local JSON loading error: \(error)", category: .database, type: .error)
-            }
-        }
-
         do {
             let remoteStations = try await remoteConfigService.fetchStations()
             await saveStationsLocally(remoteStations)
+            Logger.log("Stations loaded from remote server", category: .network, type: .default)
             return remoteStations
         } catch {
-            Logger.log("Remote stations fetch failed: \(error)", category: .network, type: .error)
+            Logger.log("Remote fetch failed: \(error.localizedDescription)", category: .network, type: .error)
+        }
 
-            if localStations.isEmpty {
-                throw error
-            }
+        let cachedStations = fetchLocalStations()
+        if !cachedStations.isEmpty {
+            Logger.log("Stations loaded from CoreData cache", category: .database, type: .default)
+            return cachedStations
+        }
 
+        if let localStations = loadStationsFromLocalJSON() {
+            await saveStationsLocally(localStations)
+            Logger.log("Stations loaded from local JSON fallback", category: .database, type: .default)
             return localStations
         }
-    }
 
-    // MARK: - Local JSON
+        let defaultStations = createDefaultStations()
+        await saveStationsLocally(defaultStations)
+        Logger.log("Using default hardcoded stations", category: .database, type: .error)
+        return defaultStations
+    }
 
     private func loadStationsFromLocalJSON() -> [Station]? {
         guard let path = Bundle.main.path(
@@ -44,7 +39,7 @@ class StationsRepository {
             ofType: "json"
         ) else {
             Logger.log("Local JSON file not found", category: .database, type: .error)
-            return createDefaultStations()
+            return nil
         }
 
         do {
@@ -53,7 +48,7 @@ class StationsRepository {
             return stations
         } catch {
             Logger.log("JSON decoding error: \(error)", category: .database, type: .error)
-            return createDefaultStations()
+            return nil
         }
     }
 
@@ -62,20 +57,20 @@ class StationsRepository {
             Station(
                 id: "1",
                 name: "RTL",
-                subtitle: "RTL bouge",
-                streamURL: "https://streaming.radio.rtl.fr/rtl-1-44-96",
+                subtitle: "Toujours avec vous",
+                streamURL: "https://icecast.rtl.fr/rtl-1-44-128",
                 imageURL: "https://cdn-media.rtl.fr/cache/LlH3G2yGy3FcB8JSqtN02g/1800x1200-0/online/image/rtl.jpg",
                 logoURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/RTL_logo.svg/1200px-RTL_logo.svg.png",
-                categories: ["Actualités", "Généraliste"]
+                categories: ["news"]
             ),
             Station(
                 id: "2",
                 name: "France Info",
-                subtitle: "Actualités en temps réel",
+                subtitle: "Vivons bien informés",
                 streamURL: "https://icecast.radiofrance.fr/franceinfo-midfi.mp3",
-                imageURL: "https://cdn-media.rtl.fr/online/image/2015/0623/7778732219_franceinfo-logo.jpg",
+                imageURL: "https://www.francetvpub.fr/sites/default/files/styles/image_768x432/public/2023-10/FI_home_logo_0.png",
                 logoURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Franceinfo.svg/1200px-Franceinfo.svg.png",
-                categories: ["Actualités", "Information"]
+                categories: ["news"]
             ),
             Station(
                 id: "3",
@@ -84,12 +79,10 @@ class StationsRepository {
                 streamURL: "https://scdn.nrjaudio.fm/audio1/fr/30001/mp3_128.mp3",
                 imageURL: "https://cdn.nrjaudio.fm/adimg/6779/3535779/1900x1080_NRJ-Supernova_1.jpg",
                 logoURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/NRJ_logo_2019.svg/1200px-NRJ_logo_2019.svg.png",
-                categories: ["Musique", "Pop"]
+                categories: ["music"]
             )
         ]
     }
-
-    // MARK: - CoreData Operations
 
     private func fetchLocalStations() -> [Station] {
         let context = coreDataManager.persistentContainer.viewContext
@@ -117,7 +110,6 @@ class StationsRepository {
     private func saveStationsLocally(_ stations: [Station]) async {
         await MainActor.run {
             let context = coreDataManager.persistentContainer.viewContext
-
             let fetchRequest: NSFetchRequest<NSFetchRequestResult> = StationEntity.fetchRequest()
             let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
 

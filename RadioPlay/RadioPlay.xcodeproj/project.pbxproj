@@ -10,6 +10,7 @@
 		36976B6B2E90284A003B6679 /* LaunchScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36976B6A2E90284A003B6679 /* LaunchScreenView.swift */; };
 		36976BD62E92C48B003B6679 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 36976BD52E92C48B003B6679 /* Localizable.xcstrings */; };
 		36976BDA2E92D3B1003B6679 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 36976BD92E92D3B1003B6679 /* GoogleMobileAds */; };
+		36976BE22E92E4B3003B6679 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 36976BE12E92E4B3003B6679 /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,7 @@
 /* Begin PBXFileReference section */
 		36976B6A2E90284A003B6679 /* LaunchScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchScreenView.swift; sourceTree = "<group>"; };
 		36976BD52E92C48B003B6679 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		36976BE12E92E4B3003B6679 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		36A6286F2DD88911001323D2 /* RadioPlay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RadioPlay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A6287C2DD88912001323D2 /* RadioPlayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RadioPlayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A628862DD88912001323D2 /* RadioPlayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RadioPlayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,6 +108,7 @@
 		36A628662DD88911001323D2 = {
 			isa = PBXGroup;
 			children = (
+				36976BE12E92E4B3003B6679 /* LaunchScreen.storyboard */,
 				36976BD42E92C407003B6679 /* Resources */,
 				36A6287F2DD88912001323D2 /* RadioPlayTests */,
 				36A628892DD88912001323D2 /* RadioPlayUITests */,
@@ -248,6 +251,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				36976BE22E92E4B3003B6679 /* LaunchScreen.storyboard in Resources */,
 				36976BD62E92C48B003B6679 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -360,6 +364,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -419,6 +424,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -448,6 +454,7 @@
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Cette application utilise Apple Music pour rechercher des pochettes d'albums";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use this data to provide you with personalized ads and support the ongoing development of this application";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -458,7 +465,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 10.0;
+				MARKETING_VERSION = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -486,6 +493,7 @@
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Cette application utilise Apple Music pour rechercher des pochettes d'albums";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use this data to provide you with personalized ads and support the ongoing development of this application";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = armv7;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -496,7 +504,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 10.0;
+				MARKETING_VERSION = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -5,8 +5,6 @@
 //  Created by Martin Parmentier on 17/05/2025.
 //
 
-
-// Presentation/Player/AudioVisualizerView.swift
 import SwiftUI
 
 struct AudioVisualizerView: View {

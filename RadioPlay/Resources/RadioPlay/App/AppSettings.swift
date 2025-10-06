@@ -17,16 +17,16 @@ struct AppSettings {
     // MARK: - App Information
     
     static let appName = "Radio Play"
-    static let appStoreID = "YOUR_APP_STORE_ID"
+    static let appStoreID = "918678324"
     static let appStoreURL = "https://apps.apple.com/app/id\(appStoreID)"
     static let appReviewURL = "https://apps.apple.com/app/id\(appStoreID)?action=write-review"
     
     static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "26.0"
     }
     
     static var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "20251005"
     }
     
     // MARK: - Remote Configuration
@@ -107,7 +107,7 @@ struct AppSettings {
 
     static let adMobAppID = "ca-app-pub-4466685095115509~5892890271"
     static let adMobBannerID = "ca-app-pub-4466685095115509/6160328830"
-    static let adMobNativeID = "ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN"
+    static let adMobNativeID = "ca-app-pub-4466685095115509/1735244993"
 
     // MARK: - Localization
     
