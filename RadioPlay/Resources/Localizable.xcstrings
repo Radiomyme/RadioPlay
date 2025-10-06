@@ -21,7 +21,10 @@
         }
       }
     },
-    "Ad" : {
+    "%lld stations" : {
+
+    },
+    "%lld stations disponibles" : {
 
     },
     "add_station.button" : {
@@ -346,6 +349,9 @@
         }
       }
     },
+    "Ajouter aux favoris" : {
+
+    },
     "Ajouter la station" : {
 
     },
@@ -492,6 +498,15 @@
           }
         }
       }
+    },
+    "En direct" : {
+
+    },
+    "En écoute" : {
+
+    },
+    "En pause" : {
+
     },
     "error.connection_failed" : {
       "extractionState" : "stale",
@@ -700,7 +715,13 @@
         }
       }
     },
+    "Hello, world!" : {
+
+    },
     "Le flux doit être au format MP3, AAC ou OGG" : {
+
+    },
+    "Mise à jour..." : {
 
     },
     "nav.all" : {
@@ -892,6 +913,12 @@
           }
         }
       }
+    },
+    "Radio Play" : {
+
+    },
+    "Retirer des favoris" : {
+
     },
     "settings.about" : {
       "extractionState" : "stale",
@@ -1823,6 +1850,9 @@
 
     },
     "Version %@" : {
+
+    },
+    "Vos Radios" : {
 
     }
   },

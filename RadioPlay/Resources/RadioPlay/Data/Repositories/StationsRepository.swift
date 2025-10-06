@@ -1,5 +1,6 @@
 import Foundation
 import CoreData
+import os
 
 class StationsRepository {
     private let remoteConfigService = RemoteConfigService()

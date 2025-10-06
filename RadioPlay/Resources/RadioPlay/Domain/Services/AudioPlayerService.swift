@@ -2,6 +2,8 @@ import Foundation
 import AVFoundation
 import MediaPlayer
 import UIKit
+import Combine
+import os
 
 class AudioPlayerService: NSObject, ObservableObject, AVPlayerItemMetadataOutputPushDelegate {
     @Published private(set) var isPlaying = false

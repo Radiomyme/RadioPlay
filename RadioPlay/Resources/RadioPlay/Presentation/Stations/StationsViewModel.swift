@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import CoreData
+import os
 
 class StationsViewModel: ObservableObject {
     @Published var stations: [Station] = []

@@ -11,9 +11,24 @@
 		36976BD62E92C48B003B6679 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 36976BD52E92C48B003B6679 /* Localizable.xcstrings */; };
 		36976BDA2E92D3B1003B6679 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 36976BD92E92D3B1003B6679 /* GoogleMobileAds */; };
 		36976BE22E92E4B3003B6679 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 36976BE12E92E4B3003B6679 /* LaunchScreen.storyboard */; };
+		36976C8D2E9439C7003B6679 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 36976BD52E92C48B003B6679 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		36976C5F2E943885003B6679 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 36A628672DD88911001323D2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 36976C512E943884003B6679;
+			remoteInfo = "RadioPlay TV";
+		};
+		36976C692E943885003B6679 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 36A628672DD88911001323D2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 36976C512E943884003B6679;
+			remoteInfo = "RadioPlay TV";
+		};
 		36A6287D2DD88912001323D2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 36A628672DD88911001323D2 /* Project object */;
@@ -34,26 +49,75 @@
 		36976B6A2E90284A003B6679 /* LaunchScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchScreenView.swift; sourceTree = "<group>"; };
 		36976BD52E92C48B003B6679 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		36976BE12E92E4B3003B6679 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		36976C522E943884003B6679 /* RadioPlay TV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "RadioPlay TV.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		36976C5E2E943885003B6679 /* RadioPlay TVTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "RadioPlay TVTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		36976C682E943885003B6679 /* RadioPlay TVUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "RadioPlay TVUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A6286F2DD88911001323D2 /* RadioPlay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RadioPlay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A6287C2DD88912001323D2 /* RadioPlayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RadioPlayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		36A628862DD88912001323D2 /* RadioPlayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RadioPlayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		36976BD72E92C59F003B6679 /* Exceptions for "RadioPlay" folder in "RadioPlay" target */ = {
+		36976C7A2E943908003B6679 /* Exceptions for "RadioPlay" folder in "RadioPlay TV" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				info.plist,
+				App/AppSettings.swift,
+				App/StringArrayTransformer.swift,
+				Data/Network/MockStationsService.swift,
+				Data/Network/NetworkError.swift,
+				Data/Network/RemoteConfigService.swift,
+				Data/Repositories/CoreDataManager.swift,
+				Data/Repositories/CustomStationsRepository.swift,
+				Data/Repositories/FavoritesRepository.swift,
+				Data/Repositories/StationsRepository.swift,
+				Domain/Models/ITunesSearchResponse.swift,
+				Domain/Models/Station.swift,
+				Domain/Models/Track.swift,
+				Domain/Services/ArtworkService.swift,
+				Domain/Services/AudioPlayerService.swift,
+				Presentation/Player/AudioPlayerManager.swift,
+				Presentation/Player/SleepTimerService.swift,
+				Presentation/Stations/CustomStation.swift,
+				Presentation/Stations/StationsViewModel.swift,
+				RadioPlay.xcdatamodeld,
+				Utils/AppUtility.swift,
+				"Utils/Extensions/UIImage+Extensions.swift",
+				Utils/LogCategory.swift,
 			);
-			target = 36A6286E2DD88911001323D2 /* RadioPlay */;
+			target = 36976C512E943884003B6679 /* RadioPlay TV */;
+		};
+		36976C9C2E943FE9003B6679 /* Exceptions for "RadioPlayTV" folder in "RadioPlay TV" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 36976C512E943884003B6679 /* RadioPlay TV */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		36976C532E943884003B6679 /* RadioPlayTV */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				36976C9C2E943FE9003B6679 /* Exceptions for "RadioPlayTV" folder in "RadioPlay TV" target */,
+			);
+			path = RadioPlayTV;
+			sourceTree = "<group>";
+		};
+		36976C612E943885003B6679 /* RadioPlay TVTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "RadioPlay TVTests";
+			sourceTree = "<group>";
+		};
+		36976C6B2E943885003B6679 /* RadioPlay TVUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "RadioPlay TVUITests";
+			sourceTree = "<group>";
+		};
 		36A628712DD88911001323D2 /* RadioPlay */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				36976BD72E92C59F003B6679 /* Exceptions for "RadioPlay" folder in "RadioPlay" target */,
+				36976C7A2E943908003B6679 /* Exceptions for "RadioPlay" folder in "RadioPlay TV" target */,
 			);
 			path = RadioPlay;
 			sourceTree = "<group>";
@@ -71,6 +135,27 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		36976C4F2E943884003B6679 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36976C5B2E943885003B6679 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36976C652E943885003B6679 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		36A6286C2DD88911001323D2 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -112,6 +197,9 @@
 				36976BD42E92C407003B6679 /* Resources */,
 				36A6287F2DD88912001323D2 /* RadioPlayTests */,
 				36A628892DD88912001323D2 /* RadioPlayUITests */,
+				36976C532E943884003B6679 /* RadioPlayTV */,
+				36976C612E943885003B6679 /* RadioPlay TVTests */,
+				36976C6B2E943885003B6679 /* RadioPlay TVUITests */,
 				36A628702DD88911001323D2 /* Products */,
 				36976B6A2E90284A003B6679 /* LaunchScreenView.swift */,
 			);
@@ -123,6 +211,9 @@
 				36A6286F2DD88911001323D2 /* RadioPlay.app */,
 				36A6287C2DD88912001323D2 /* RadioPlayTests.xctest */,
 				36A628862DD88912001323D2 /* RadioPlayUITests.xctest */,
+				36976C522E943884003B6679 /* RadioPlay TV.app */,
+				36976C5E2E943885003B6679 /* RadioPlay TVTests.xctest */,
+				36976C682E943885003B6679 /* RadioPlay TVUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,6 +221,74 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		36976C512E943884003B6679 /* RadioPlay TV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 36976C702E943885003B6679 /* Build configuration list for PBXNativeTarget "RadioPlay TV" */;
+			buildPhases = (
+				36976C4E2E943884003B6679 /* Sources */,
+				36976C4F2E943884003B6679 /* Frameworks */,
+				36976C502E943884003B6679 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				36976C532E943884003B6679 /* RadioPlayTV */,
+			);
+			name = "RadioPlay TV";
+			packageProductDependencies = (
+			);
+			productName = "RadioPlay TV";
+			productReference = 36976C522E943884003B6679 /* RadioPlay TV.app */;
+			productType = "com.apple.product-type.application";
+		};
+		36976C5D2E943885003B6679 /* RadioPlay TVTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 36976C732E943885003B6679 /* Build configuration list for PBXNativeTarget "RadioPlay TVTests" */;
+			buildPhases = (
+				36976C5A2E943885003B6679 /* Sources */,
+				36976C5B2E943885003B6679 /* Frameworks */,
+				36976C5C2E943885003B6679 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				36976C602E943885003B6679 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				36976C612E943885003B6679 /* RadioPlay TVTests */,
+			);
+			name = "RadioPlay TVTests";
+			packageProductDependencies = (
+			);
+			productName = "RadioPlay TVTests";
+			productReference = 36976C5E2E943885003B6679 /* RadioPlay TVTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		36976C672E943885003B6679 /* RadioPlay TVUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 36976C762E943885003B6679 /* Build configuration list for PBXNativeTarget "RadioPlay TVUITests" */;
+			buildPhases = (
+				36976C642E943885003B6679 /* Sources */,
+				36976C652E943885003B6679 /* Frameworks */,
+				36976C662E943885003B6679 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				36976C6A2E943885003B6679 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				36976C6B2E943885003B6679 /* RadioPlay TVUITests */,
+			);
+			name = "RadioPlay TVUITests";
+			packageProductDependencies = (
+			);
+			productName = "RadioPlay TVUITests";
+			productReference = 36976C682E943885003B6679 /* RadioPlay TVUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		36A6286E2DD88911001323D2 /* RadioPlay */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 36A628902DD88912001323D2 /* Build configuration list for PBXNativeTarget "RadioPlay" */;
@@ -206,9 +365,20 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1630;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
+					36976C512E943884003B6679 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					36976C5D2E943885003B6679 = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = 36976C512E943884003B6679;
+					};
+					36976C672E943885003B6679 = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = 36976C512E943884003B6679;
+					};
 					36A6286E2DD88911001323D2 = {
 						CreatedOnToolsVersion = 16.3;
 					};
@@ -242,11 +412,36 @@
 				36A6286E2DD88911001323D2 /* RadioPlay */,
 				36A6287B2DD88912001323D2 /* RadioPlayTests */,
 				36A628852DD88912001323D2 /* RadioPlayUITests */,
+				36976C512E943884003B6679 /* RadioPlay TV */,
+				36976C5D2E943885003B6679 /* RadioPlay TVTests */,
+				36976C672E943885003B6679 /* RadioPlay TVUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		36976C502E943884003B6679 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				36976C8D2E9439C7003B6679 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36976C5C2E943885003B6679 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36976C662E943885003B6679 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		36A6286D2DD88911001323D2 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -273,6 +468,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		36976C4E2E943884003B6679 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36976C5A2E943885003B6679 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36976C642E943885003B6679 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		36A6286B2DD88911001323D2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -298,6 +514,16 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		36976C602E943885003B6679 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 36976C512E943884003B6679 /* RadioPlay TV */;
+			targetProxy = 36976C5F2E943885003B6679 /* PBXContainerItemProxy */;
+		};
+		36976C6A2E943885003B6679 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 36976C512E943884003B6679 /* RadioPlay TV */;
+			targetProxy = 36976C692E943885003B6679 /* PBXContainerItemProxy */;
+		};
 		36A6287E2DD88912001323D2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 36A6286E2DD88911001323D2 /* RadioPlay */;
@@ -311,6 +537,170 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		36976C712E943885003B6679 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 20251006;
+				DEVELOPMENT_TEAM = 8A4M4QND2E;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RadioPlayTV/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Radio Play";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = arm64;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.6;
+			};
+			name = Debug;
+		};
+		36976C722E943885003B6679 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 20251006;
+				DEVELOPMENT_TEAM = 8A4M4QND2E;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RadioPlayTV/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Radio Play";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = arm64;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.6;
+			};
+			name = Release;
+		};
+		36976C742E943885003B6679 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8A4M4QND2E;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ingravity.radiomyme.RadioPlay-TVTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RadioPlay TV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RadioPlay TV";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		36976C752E943885003B6679 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8A4M4QND2E;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ingravity.radiomyme.RadioPlay-TVTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RadioPlay TV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RadioPlay TV";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		36976C772E943885003B6679 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8A4M4QND2E;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ingravity.radiomyme.RadioPlay-TVUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = "RadioPlay TV";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		36976C782E943885003B6679 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8A4M4QND2E;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ingravity.radiomyme.RadioPlay-TVUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = "RadioPlay TV";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 		36A6288E2DD88912001323D2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -444,7 +834,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20251005;
+				CURRENT_PROJECT_VERSION = 20251006;
 				DEVELOPMENT_TEAM = 8A4M4QND2E;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -465,7 +855,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 26.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -483,7 +873,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20251005;
+				CURRENT_PROJECT_VERSION = 20251006;
 				DEVELOPMENT_TEAM = 8A4M4QND2E;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -504,7 +894,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 26.0;
+				MARKETING_VERSION = 26.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ingravity.radiomyme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -589,6 +979,33 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		36976C702E943885003B6679 /* Build configuration list for PBXNativeTarget "RadioPlay TV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36976C712E943885003B6679 /* Debug */,
+				36976C722E943885003B6679 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		36976C732E943885003B6679 /* Build configuration list for PBXNativeTarget "RadioPlay TVTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36976C742E943885003B6679 /* Debug */,
+				36976C752E943885003B6679 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		36976C762E943885003B6679 /* Build configuration list for PBXNativeTarget "RadioPlay TVUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36976C772E943885003B6679 /* Debug */,
+				36976C782E943885003B6679 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		36A6286A2DD88911001323D2 /* Build configuration list for PBXProject "RadioPlay" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

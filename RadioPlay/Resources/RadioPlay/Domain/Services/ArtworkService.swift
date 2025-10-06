@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import os
 
 class ArtworkService {
     private let cache = NSCache<NSString, UIImage>()

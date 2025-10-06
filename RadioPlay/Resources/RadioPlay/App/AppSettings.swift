@@ -22,11 +22,11 @@ struct AppSettings {
     static let appReviewURL = "https://apps.apple.com/app/id\(appStoreID)?action=write-review"
     
     static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "26.0"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "26.0.1"
     }
     
     static var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "20251005"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "20251006"
     }
     
     // MARK: - Remote Configuration
